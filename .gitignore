@@ -1,5 +1,6 @@
 .env
 .env.*
+.mw-setup-*
 !.env.example
 .runtime/
 .venv/

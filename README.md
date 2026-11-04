@@ -15,6 +15,8 @@ Prerequisites: **Docker Desktop / Docker Engine with Compose v2, Git, and Python
 From a clone of this repository:
 
 ```sh
+git clone https://github.com/Tetsuya-Uchimura/memoryweaver-stories.git
+cd memoryweaver-stories
 python3 scripts/dev.py up
 python3 scripts/dev.py seed --generate
 python3 scripts/dev.py credentials
@@ -22,7 +24,7 @@ python3 scripts/dev.py credentials
 
 Open **[MemoryWeaver](http://localhost:8787)** and **[Mattermost](http://localhost:8065)**. Sign in to Mattermost with the locally generated `MATTERMOST_USER` and `MATTERMOST_USER_PASSWORD` printed by the credentials command. Open the private **okinawa-memories** channel in the **memoryweaver** team.
 
-The first command fetches the audited official Switch source, builds it, starts PostgreSQL and Mattermost, runs Switch’s own setup job, registers four custom agents, creates a private bridged room, and starts the book application. It generates fresh secrets in a gitignored, owner-readable `.env`. The second command posts six deliberately shuffled fictional memories and four licensed illustrative photographs using two actual Mattermost accounts, then asks the Collector to make a book.
+The `up` command fetches the audited official Switch source, builds it, starts PostgreSQL and Mattermost, runs Switch’s own setup job, registers four custom agents, creates a private bridged room, and starts the book application. It generates fresh secrets in a gitignored, owner-readable `.env`. The `seed --generate` command posts six deliberately shuffled fictional memories and four licensed illustrative photographs using two actual Mattermost accounts, then asks the Collector to make a book. This repository is currently private; reviewers need repository access to clone it.
 
 **The default is an explicitly labeled REPLAY DEMO.** It uses real Mattermost, real Switch, real room documents, real targeted handoffs, and deterministic extractive writing. It requires no AI, GitHub, or Cloudflare account. It is useful for checking infrastructure; it is **not evidence of live AI generation**. For the full creative workflow, enable live mode below.
 
@@ -110,6 +112,8 @@ PUBLISH v3 <digest-from-your-preview> I CONSENT TO PUBLIC PHOTOS AND TEXT
 Only the configured `traveler` account can authorize that exact version through Mattermost. An in-progress edit or a newer version invalidates the command. The digest binds the book and the selected photographs’ byte hashes. With publishing disabled, approval produces a sanitized **local export only**. With publishing enabled, it atomically commits the export to a **private** GitHub repository, waits for GitHub Actions → Cloudflare Pages, and replies with the actual deployment URL in Mattermost.
 
 Read [Cloud publishing](docs/PUBLISHING.md) before enabling it. A public Pages URL is public even when GitHub is private. Sharing is a separate, intentional step, and later edits need fresh approval.
+
+For the developer repository, `python3 scripts/setup_publishing.py` creates/adopts the optional Cloudflare Direct Upload project and saves the required secrets to GitHub’s `production` environment using hidden terminal input. It runs a read-only Actions readiness check and never deploys a book. `python3 scripts/setup_publishing.py --publisher-token` configures a separately scoped GitHub token for the local Publisher and keeps `PUBLISH_ENABLED=false`. These optional commands are unnecessary for local judging.
 
 ## What is automatic, and what is not
 

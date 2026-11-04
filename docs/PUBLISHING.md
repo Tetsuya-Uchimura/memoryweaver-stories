@@ -2,6 +2,38 @@
 
 Local judging needs none of these accounts. Do not configure publishing until you have reviewed the book and understand what will be public.
 
+## Developer repository: current setup and quickest path
+
+The selected private repository is [Tetsuya-Uchimura/memoryweaver-stories](https://github.com/Tetsuya-Uchimura/memoryweaver-stories). Source code and workflows have been pushed to `main`; the initial [GitHub Actions test run](https://github.com/Tetsuya-Uchimura/memoryweaver-stories/actions/runs/41838894668) passed. The `production` environment exists. Cloudflare credentials and the actual Pages project still need to be supplied/configured. No approved book has been pushed or deployed.
+
+Run the setup helper in **your own terminal**, where hidden token prompts work:
+
+```sh
+python3 scripts/setup_publishing.py
+```
+
+It asks for your Cloudflare Account ID and an API token with **Account → Cloudflare Pages → Edit** permission scoped to that account. Create the token in [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens); obtain your Account ID from your Cloudflare account dashboard. Do not send either provider’s tokens through chat or Mattermost.
+
+The helper:
+
+1. Verifies access to the selected private GitHub repository.
+2. Creates or adopts the `memoryweaver-stories` **Direct Upload** project with production branch `main`. It refuses to reconfigure an existing Git-integrated project.
+3. Stores `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as encrypted secrets in GitHub’s `production` environment; it does not write the Cloudflare token to disk or shell arguments.
+4. Sets the production environment variable `CLOUDFLARE_PAGES_PROJECT=memoryweaver-stories`.
+5. Starts [Check Cloudflare publishing settings](https://github.com/Tetsuya-Uchimura/memoryweaver-stories/actions/workflows/publishing-readiness.yml), which reads the project through Cloudflare’s API without deploying anything. Inspect its result before proceeding.
+
+For a different project/repository, use `--project your-project --repo your-account/your-private-repository`. The manual setup below remains supported.
+
+Configure a separate, repository-scoped fine-grained GitHub token for the local Publisher:
+
+```sh
+python3 scripts/setup_publishing.py --publisher-token
+```
+
+Create the token in [GitHub fine-grained personal access tokens](https://github.com/settings/personal-access-tokens/new), select only this repository, and grant **Contents: read/write** and **Commit statuses: read**. The helper verifies read access, atomically writes the token into your ignored local `.env` with mode 0600, and leaves publishing disabled. It does not copy your broader GitHub CLI login into the application.
+
+Once the read-only readiness check succeeds and you are ready to publish, set `PUBLISH_ENABLED=true` in `.env` and run `python3 scripts/dev.py up`. Review the latest book and send its exact-version consent command in Mattermost. Setup, enabling the feature, and pushing application source do not approve a travel book.
+
 ## Prepare your own developer environment
 
 1. Create a **private GitHub repository** containing the MemoryWeaver code, `.github/workflows/publish.yml`, and `scripts/verify_release.py`. Its default publication branch is `main`. Keep `.env`, `.runtime`, Docker volumes, and actual personal photos out of Git. A private repository is enforced by Publisher.
@@ -12,7 +44,7 @@ Local judging needs none of these accounts. Do not configure publishing until yo
 
 ```dotenv
 PUBLISH_ENABLED=true
-PUBLISH_GITHUB_REPOSITORY=your-account/your-private-repository
+PUBLISH_GITHUB_REPOSITORY=Tetsuya-Uchimura/memoryweaver-stories
 PUBLISH_GITHUB_BRANCH=main
 PUBLISH_GITHUB_TOKEN=your-locally-stored-scoped-token
 ```
