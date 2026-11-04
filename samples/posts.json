@@ -1,0 +1,8 @@
+[
+  {"key":"arrival","author":"traveler","at":"2026-10-12T10:15:00+09:00","text":"沖縄に到着！海がすごく綺麗。何度でも見ていたい青だった。","asset":"coast"},
+  {"key":"aquarium","author":"hana","at":"2026-10-13T10:30:00+09:00","text":"美ら海水族館へ。ジンベエザメが想像以上に大きかった！","asset":"aquarium"},
+  {"key":"soba","author":"traveler","at":"2026-10-13T13:20:00+09:00","text":"家族で沖縄そばを食べた。あったかいスープにほっとした。","asset":"soba"},
+  {"key":"sea","author":"hana","at":"2026-10-12T16:45:00+09:00","text":"予定を詰め込まず、今日はゆっくり海を眺めた。この時間が好き。","asset":null},
+  {"key":"sunset","author":"traveler","at":"2026-10-14T18:10:00+09:00","text":"夕日が綺麗だった。また来たいね。","asset":"sunset"},
+  {"key":"home","author":"hana","at":"2026-10-14T18:30:00+09:00","text":"家族で同じ景色を見られたのが、いちばんの思い出。","asset":null}
+]

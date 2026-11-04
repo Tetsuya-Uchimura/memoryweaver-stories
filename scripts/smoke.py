@@ -1,0 +1,90 @@
+"""Real Mattermost → Switch integration. Runs only with replay and cloud OFF."""
+import asyncio
+import os
+from pathlib import Path
+import subprocess
+import sys
+import time
+
+import httpx
+from app.store import Store
+from agents.publish import approval_command
+from scripts.verify_release import verify
+
+
+async def main():
+    if os.getenv("AI_MODE", "replay") != "replay" or os.getenv("PUBLISH_ENABLED") == "true":
+        raise SystemExit("Smoke test requires AI_MODE=replay and PUBLISH_ENABLED=false")
+    store = Store()
+    if not store.get("seed:complete"):
+        subprocess.run([sys.executable, "-m", "scripts.seed", "--generate"], check=True)
+    channel = store.get("switch")["channel_id"]
+    async with httpx.AsyncClient(base_url=os.environ["MATTERMOST_URL"], timeout=30) as mm:
+        login = await mm.post("/api/v4/users/login", json={"login_id": os.environ["MATTERMOST_USER"], "password": os.environ["MATTERMOST_USER_PASSWORD"]})
+        login.raise_for_status()
+        headers = {"Authorization": "Bearer " + login.headers["token"]}
+
+        async def post(message, auth=headers):
+            response = await mm.post("/api/v4/posts", headers=auth, json={"channel_id": channel, "message": message})
+            response.raise_for_status()
+
+        async def wait_version(after, predicate=lambda r: True):
+            deadline = time.monotonic() + 90
+            while time.monotonic() < deadline:
+                revision = store.revision()
+                if revision and revision["version"] > after and predicate(revision):
+                    return revision
+                await asyncio.sleep(1)
+            raise AssertionError("No expected preview update; inspect agent logs and collaboration feed")
+
+        before = (store.revision() or {}).get("version", 0)
+        await post("@mw-collector 今回の沖縄旅行をアルバムにして")
+        first = await wait_version(before)
+        assert len(first["album"]["chapters"]) == 3
+        assert len(first["sources"]) == 6
+        assert {s["author"] for s in first["sources"]} == {"traveler", "hana"}
+        stale_command = approval_command(first)
+        print("PASS generation: real Mattermost posts → Switch documents → three-chapter preview")
+
+        await post("@mw-collector 表紙を夕日の写真に変更して")
+        second = await wait_version(first["version"], lambda r: r["album"]["cover_asset_id"] == "sunset")
+        assert store.revision(first["version"])["album"]["cover_asset_id"] == first["album"]["cover_asset_id"]
+        print("PASS revision: sunset cover, prior version preserved")
+
+        await post("@mw-collector 2日目の文章をもっと感動的にして")
+        third = await wait_version(second["version"])
+        assert third["album"]["chapters"][1]["body"] != second["album"]["chapters"][1]["body"]
+        assert third["album"]["cover_asset_id"] == "sunset"
+        print("PASS revision: day-two prose updated, sunset cover preserved")
+
+        event_start = len(store.events())
+        await post(stale_command)
+        await asyncio.sleep(3)
+        assert any(e["kind"] == "error" and "latest version" in e["message"] for e in store.events()[event_start:])
+        print("PASS privacy: stale version approval rejected")
+
+        # Another real human in the same room cannot approve the owner's publication.
+        hana = await mm.post("/api/v4/users/login", json={"login_id": "hana", "password": store.get("seed:hana_password")})
+        hana.raise_for_status()
+        await post(approval_command(third), {"Authorization": "Bearer " + hana.headers["token"]})
+        await asyncio.sleep(3)
+        assert any("Only the configured traveler" in e["message"] for e in store.events())
+        print("PASS privacy: another contributor cannot authorize publication")
+
+        await post(approval_command(third))
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline:
+            publication = store.get("publication", {})
+            if publication.get("version") == third["version"] and publication.get("state") == "local-export":
+                break
+            await asyncio.sleep(1)
+        else:
+            raise AssertionError("No approved local export")
+        verify(store.root / "exports" / ("v" + str(third["version"])))
+        assert store.get("publication")["url"] is None
+        print("PASS publication: exact-version consent → allowlisted local export; no cloud calls")
+        print("All real-stack smoke checks passed.")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

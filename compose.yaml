@@ -1,0 +1,91 @@
+# Layered on the pinned official standalone Compose by scripts/dev.py.
+x-agent: &agent
+  build:
+    context: .
+    dockerfile: agents/Dockerfile
+  image: memoryweaver-agents:local
+  restart: unless-stopped
+  environment: &agent-env
+    SWITCH_URL: http://switch:8000
+    MATTERMOST_URL: http://mattermost:8065
+    WEB_URL: http://web:8787
+    DATA_DIR: /data
+    WEB_INTERNAL_TOKEN: ${WEB_INTERNAL_TOKEN}
+    AI_MODE: ${AI_MODE:-replay}
+    MATTERMOST_USER: ${MATTERMOST_USER}
+    CLAUDE_MODEL: ${CLAUDE_MODEL:-}
+    CODEX_MODEL: ${CODEX_MODEL:-}
+  volumes:
+    - memorydata:/data
+    - ai-auth:/home/weaver
+  depends_on:
+    bootstrap:
+      condition: service_completed_successfully
+services:
+  switch:
+    build:
+      context: .runtime/switch
+      dockerfile: deploy/shared_resources/images/Dockerfile.switch
+    image: memoryweaver-switch:source
+    restart: unless-stopped
+  setup:
+    build:
+      context: .runtime/switch
+      dockerfile: deploy/shared_resources/images/Dockerfile.setup
+    image: memoryweaver-switch-setup:source
+    environment:
+      MATTERMOST_PUBLIC_URL: http://localhost:8065
+  web:
+    build: .
+    image: memoryweaver-web:local
+    restart: unless-stopped
+    environment:
+      DATA_DIR: /data
+      WEB_INTERNAL_TOKEN: ${WEB_INTERNAL_TOKEN}
+      AI_MODE: ${AI_MODE:-replay}
+      PUBLISH_ENABLED: ${PUBLISH_ENABLED:-false}
+    ports: ["127.0.0.1:8787:8787"]
+    volumes: ["memorydata:/data"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8787/api/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  bootstrap:
+    <<: *agent
+    restart: "no"
+    user: root
+    env_file: .env
+    command: ["python", "-m", "scripts.provision"]
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+      web:
+        condition: service_healthy
+  collector:
+    <<: *agent
+    environment:
+      <<: *agent-env
+      AGENT_ROLE: collector
+  storyteller:
+    <<: *agent
+    environment:
+      <<: *agent-env
+      AGENT_ROLE: storyteller
+  editor:
+    <<: *agent
+    environment:
+      <<: *agent-env
+      AGENT_ROLE: editor
+  publisher:
+    <<: *agent
+    environment:
+      <<: *agent-env
+      AGENT_ROLE: publisher
+      PUBLISH_ENABLED: ${PUBLISH_ENABLED:-false}
+      PUBLISH_GITHUB_REPOSITORY: ${PUBLISH_GITHUB_REPOSITORY:-}
+      PUBLISH_GITHUB_BRANCH: ${PUBLISH_GITHUB_BRANCH:-main}
+      PUBLISH_GITHUB_TOKEN: ${PUBLISH_GITHUB_TOKEN:-}
+volumes:
+  memorydata:
+  ai-auth:

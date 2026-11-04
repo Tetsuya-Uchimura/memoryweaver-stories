@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f7f5ef">
+  <meta name="description" content="A little scattered. A little unforgettable. Turn your travel memories into a story, together.">
+  <title>MemoryWeaver — A story worth keeping</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to your story</a>
+  <aside class="sidebar" aria-label="Studio navigation">
+    <a class="brand" href="/" aria-label="MemoryWeaver home"><span class="weave">✳</span><span>Memory<span class="brand-light">Weaver</span><small>A PLACE FOR YOUR STORIES</small></span></a>
+    <div class="workspace-label">YOUR TRAVEL STUDIO</div>
+    <div class="trip-card"><span class="trip-icon">波</span><span>Okinawa, together<small>A family travel journal</small></span><span class="small-arrow">⌄</span></div>
+    <nav class="main-nav">
+      <button class="nav-button active" data-view="story"><span>▤</span>Our story<span class="nav-dot"></span></button>
+      <button class="nav-button" data-view="memories"><span>▧</span>Memory inbox<span id="memory-count" class="count">0</span></button>
+      <button class="nav-button" data-view="room"><span>✳</span>The weaving room</button>
+    </nav>
+    <div class="sidebar-rule"></div>
+    <div class="workspace-label">MADE TOGETHER WITH</div>
+    <div id="agent-list" class="agent-list"></div>
+    <div class="human-note"><span class="avatar human">You</span><p>You bring the memories.<br>We bring them together.</p></div>
+    <div class="sidebar-bottom"><span class="switch-mark">s↗</span><span>Connected through <strong>Switch</strong><small id="connection-label">Connecting to your studio…</small></span></div>
+  </aside>
+
+  <div class="workspace">
+    <header class="topbar"><div class="breadcrumb">Your stories <span>/</span> <strong>Okinawa, together</strong></div><div class="top-actions"><span id="mode" class="mode">REPLAY DEMO</span><span class="private-label"><span>♧</span> Private preview</span><button class="avatar human help-button" id="help" aria-label="Open getting started guide">?</button></div></header>
+    <main id="main">
+      <div class="page-heading"><div><div class="eyebrow">SCATTERED MOMENTS. ONE BEAUTIFUL STORY.</div><h1 id="page-title">A story worth keeping<span>.</span></h1><p id="page-description">Your memories, thoughtfully woven together.</p></div><button class="primary" id="edit-button"><span>✧</span> Edit with your team <span>↗</span></button></div>
+      <div class="story-toolbar"><div class="view-tabs" aria-label="Book view"><button data-book="book" class="selected">▤ &nbsp; Storybook</button><button data-book="photos">▧ &nbsp; Photographs</button></div><div class="toolbar-right"><span id="version-label">Waiting for your memories</span><button id="history-button" class="icon-button" aria-label="Version history">↶</button><button id="read-button" class="text-button">Reading mode ↗</button></div></div>
+      <div id="view-story" class="view"></div>
+      <section id="view-memories" class="view hidden" aria-label="Original memories"></section>
+      <section id="view-room" class="view hidden" aria-label="Agent collaboration activity"></section>
+      <footer class="footer"><a class="footer-brand" href="/">✳ <span>MemoryWeaver</span></a><span>Every memory has a story. This one is yours.</span><button class="text-button" id="credits-button">Photo credits &amp; about</button></footer>
+    </main>
+  </div>
+  <dialog id="panel"><div class="dialog-heading"><span id="panel-label" class="eyebrow">YOUR STUDIO</span><button id="close-panel" class="icon-button" aria-label="Close dialog">×</button></div><div id="panel-content"></div></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

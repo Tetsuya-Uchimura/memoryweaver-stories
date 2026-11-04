@@ -1,0 +1,7 @@
+{
+  "name": "memoryweaver-browser-checks",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {"test:browser": "playwright test", "check": "node --check app/static/app.js"},
+  "devDependencies": {"@playwright/test": "1.56.1"}
+}
