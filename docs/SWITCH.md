@@ -1,6 +1,6 @@
 # Switch architecture and source audit
 
-Audit date: November 4, 2026. Upstream: https://github.com/sandbox-quantum/switch. Pin: **6e4ade5269d65ee38060a9f43b77c5e5b3be2f10**. Never replace this with an unreviewed `main` or `latest` tag.
+Audit date: November 5, 2026. Upstream: https://github.com/sandbox-quantum/switch. Pin: **6e4ade5269d65ee38060a9f43b77c5e5b3be2f10**. Never replace this with an unreviewed `main` or `latest` tag.
 
 The source pin is fetched by Git and checked on every launcher invocation. We build the official core and setup Dockerfiles rather than guessing a published image tag; upstream Console release versions and server registry versions are not interchangeable.
 
@@ -13,7 +13,7 @@ All links below point to the exact source revision used by the project.
 | Standalone infrastructure | [Compose](https://github.com/sandbox-quantum/switch/blob/6e4ade5269d65ee38060a9f43b77c5e5b3be2f10/deploy/local/standalone-docker-compose.yml) | Layer `compose.yaml` on it using `--project-directory` so contexts resolve consistently |
 | Mattermost/team/account/bridge setup | [setup.py](https://github.com/sandbox-quantum/switch/blob/6e4ade5269d65ee38060a9f43b77c5e5b3be2f10/deploy/shared_resources/setup.py) | Execute unchanged; includes gateway-cookie login and owner identity linking |
 | Registration and heartbeat schemas | [schemas.py](https://github.com/sandbox-quantum/switch/blob/6e4ade5269d65ee38060a9f43b77c5e5b3be2f10/core/switch_core/bridges/agent/api/schemas.py) | `POST /agents` with registration key; agent API keys are separate credentials |
-| SSE and media HTTP routes | [handlers.py](https://github.com/sandbox-quantum/switch/blob/6e4ade5269d65ee38060a9f43b77c5e5b3be2f10/core/switch_core/bridges/agent/api/handlers.py) | `GET /agents/{id}/events`, `POST .../connection/beat`, room-scoped attachment downloads |
+| SSE and media HTTP routes | [handlers.py](https://github.com/sandbox-quantum/switch/blob/6e4ade5269d65ee38060a9f43b77c5e5b3be2f10/core/switch_core/bridges/agent/api/handlers.py) | `GET /agents/{id}/events`, `POST .../connection/beat`, room-scoped attachment downloads and multipart uploads of the cover/PDF group |
 | Wire encoding and initial state | [stream.py](https://github.com/sandbox-quantum/switch/blob/6e4ade5269d65ee38060a9f43b77c5e5b3be2f10/core/switch_core/bridges/agent/protocol/stream.py) | Read SSE `event:` as well as `data:`; control-frame data does not contain `type` |
 | Operation signatures | [definitions.py](https://github.com/sandbox-quantum/switch/blob/6e4ade5269d65ee38060a9f43b77c5e5b3be2f10/core/switch_core/bridges/agent/operations/definitions.py) | Discover registry at startup; invoke raw arguments, not a fabricated RPC wrapper |
 | Example custom-client bootstrap | [official e2e harness](https://github.com/sandbox-quantum/switch/blob/6e4ade5269d65ee38060a9f43b77c5e5b3be2f10/core/tests/e2e/follow_the_conversation/harness.py) | Reference for agent registration, bridge selection, and room creation |
@@ -49,13 +49,16 @@ sequenceDiagram
     E->>S: Load draft; save checked review or ask human to clarify
     E->>S: Target Publisher after evidence validation
     S->>P: Handoff
-    P->>P: Commit a new local preview version
-    P->>S: Preview URL; publication requires exact-version consent
+    P->>P: Commit local preview version and delivery intent; render PDF
+    P->>S: Standard multipart media: title, version URL, cover and PDF
+    S->>H: Publisher bot posts both attachments in the original channel
     H->>S: Natural-language revision / factual clarification
     S->>C: Start a new version with shared context
 ```
 
 The web application provides version storage, photo sanitization, and a projection of the actual collaboration events. It cannot start AI generation or approve publication through a browser write API. No browser token is shipped. Model child processes receive a filtered environment without Switch, Mattermost, web-internal, or publishing credentials.
+
+Publisher uses its own Switch agent key for attachment delivery; Switch's official Mattermost adapter uses the bot identity it already manages. No direct Mattermost-token fallback is required. See [Mattermost delivery](MATTERMOST-DELIVERY.md) for exact audited media paths, retry behavior, and the private PDF boundary. Cloud publication still requires separate exact-version human consent.
 
 ## Retry and recovery limits
 

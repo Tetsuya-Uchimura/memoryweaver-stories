@@ -1,0 +1,78 @@
+"""Durable private completion delivery, entirely through Switch's media API."""
+from __future__ import annotations
+
+import asyncio
+import time
+
+from agents.artifacts import album_url, artifact_paths, render_artifacts
+from agents.publish import approval_command
+
+
+def completion_caption(revision):
+    version = revision["version"]
+    # User/model-authored titles cannot create Mattermost mentions or links.
+    title = revision["album"]["title"].translate(str.maketrans({"@": "＠", "[": "［", "]": "］", "*": "＊", "`": "｀", "\n": " ", "\r": " "}))
+    heading = "旅行記が完成しました" if version == 1 else "旅行記を更新しました"
+    return f"### {heading} 📖\n\n**{title}**\n\nWebアルバム：{album_url(version)}\n\n表紙のプレビューと、この版の旅行記PDFを添付しました。\nこのチャンネルで修正を依頼できます：`@mw-collector 表紙を夕日の写真に変更して`\n\nローカルの非公開版です。クラウド公開は別途承認が必要です。\n公開を希望する場合は、内容を確認したうえで次の承認を送信してください：\n`{approval_command(revision)}`\n\nMemoryWeaver · v{version} · {revision['mode'].upper()}"
+
+
+class DeliveryManager:
+    def __init__(self, store, client):
+        self.store = store
+        self.client = client
+        self.lock = asyncio.Lock()
+        with store.connect() as db:
+            # A stopped process may have left a render or request unfinished.
+            db.execute("UPDATE deliveries SET state='pending' WHERE state IN ('rendering','sending')")
+
+    async def existing_receipt(self, revision):
+        version = revision["version"]
+        required = {f"MemoryWeaver-v{version}.pdf", f"MemoryWeaver-cover-v{version}.jpg"}
+        marker = f"MemoryWeaver · v{version} · {revision['mode'].upper()}"
+        for entry in reversed(await self.client.history()):
+            if entry.get("sender_kind") == "agent" and entry.get("sender_name") == "mw-publisher" and marker in entry.get("body", "").splitlines() and required.issubset({a["filename"] for a in entry.get("attachments", [])}):
+                return {"event_id": entry["id"], "recovered": True}
+        return None
+
+    async def process(self, version):
+        async with self.lock:
+            delivery = self.store.delivery(version)
+            if not delivery or delivery["state"] == "sent":
+                return
+            revision = self.store.revision(version)
+            attempt = delivery["attempts"] + 1
+            try:
+                self.store.delivery_update(version, "rendering", attempt)
+                pdf, cover, manifest = await asyncio.to_thread(render_artifacts, self.store, revision)
+                # Recover an accepted upload after a lost HTTP response/restart.
+                receipt = await self.existing_receipt(revision)
+                caption = completion_caption(revision)
+                if receipt is None:
+                    self.store.delivery_update(version, "sending", attempt)
+                    receipt = await self.client.upload([
+                        (cover.name, cover.read_bytes(), "image/jpeg"),
+                        (pdf.name, pdf.read_bytes(), "application/pdf"),
+                    ], caption)
+                receipt = {**receipt, **manifest, "url": album_url(version), "sent_at": time.time()}
+                self.store.delivery_update(version, "sent", attempt, receipt=receipt)
+                self.store.event("publisher", caption, "complete")
+            except Exception as exc:
+                safe = str(exc) if isinstance(exc, ValueError) else type(exc).__name__
+                state = "retrying" if attempt < 5 else "failed"
+                self.store.delivery_update(version, state, attempt, time.time() + min(60, 2 ** attempt), error=safe[:400])
+                self.store.event("publisher", f"v{version}: private artifact delivery {state} ({safe[:400]})", "error")
+                if attempt == 1:
+                    # The book is already saved; report an attachment failure separately.
+                    try:
+                        await self.client.say(f"旅行記 v{version} は保存済みです：{album_url(version)}\nPDF・表紙の送信を再試行します。届かない場合は `@mw-publisher PDFを再送して v{version}` と依頼してください。")
+                    except Exception:
+                        pass
+
+    async def run(self):
+        while True:
+            await self.client.connected.wait()
+            with self.store.connect() as db:
+                versions = [row[0] for row in db.execute("SELECT revision FROM deliveries WHERE state IN ('pending','retrying') AND next_attempt<=? ORDER BY revision", (time.time(),))]
+            for version in versions:
+                await self.process(version)
+            await asyncio.sleep(2)

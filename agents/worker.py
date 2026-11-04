@@ -28,6 +28,9 @@ class Worker:
         self.client = Switch(state["agents"][role], state["room_id"])
         self.mode = os.getenv("AI_MODE", "replay")
         self.queue = asyncio.Queue()
+        if role == "publisher":
+            from agents.delivery import DeliveryManager
+            self.deliveries = DeliveryManager(self.store, self.client)
 
     async def report(self, message, thread=None, kind="progress"):
         self.store.event(self.role, message, kind)
@@ -77,7 +80,7 @@ class Worker:
         thread = entry.get("thread_id") or event_id
         human = entry.get("sender_kind") == "user"
         if self.role == "collector" and human:
-            if "PUBLISH " not in body and ("@mw-collector" in body or GENERATION.search(body) or EDIT.search(body)) and not STAMP.match(body):
+            if "PUBLISH " not in body and "@mw-publisher" not in body and ("@mw-collector" in body or GENERATION.search(body) or EDIT.search(body)) and not STAMP.match(body):
                 job = self.store.job(body, event_id)
                 if job:
                     await self.report("I’m gathering the photographs and everyone’s words. Capture dates will guide the chapters; missing details stay unknown. · " + self.mode.upper(), thread)
@@ -99,6 +102,13 @@ class Worker:
             else:
                 message = await approve_and_publish(self.store, body, entry)
                 await self.report(message, thread, "publication")
+        elif self.role == "publisher" and human and "@mw-publisher" in body and re.search(r"再送|送り直|resend|retry", body, re.I):
+            requested = re.search(r"\bv(\d+)\b", body, re.I)
+            current = self.store.revision(int(requested[1])) if requested else self.store.revision()
+            if not current:
+                raise ValueError("先に旅行記を作成してください。指定された版が見つかりません。")
+            self.store.queue_delivery(current["version"])
+            await self.report(f"旅行記 v{current['version']} の添付を確認し、未送信なら再送します。", thread)
         elif self.role != "collector" and not human:
             match = re.search(r"MW_HANDOFF (\{.*\})", body, re.S)
             expected = "mw-" + ROLES[ROLES.index(self.role) - 1]
@@ -138,10 +148,11 @@ class Worker:
                         raise ValueError("Missing editorial review")
                     album = Album.model_validate(payload["album"])
                     validate_evidence(album, payload["sources"], {a for s in payload["sources"] for a in s["asset_ids"]})
-                    version = self.store.commit(album.model_dump(), job["id"], payload["mode"], payload["sources"])
-                    from agents.publish import approval_command
-                    command = approval_command(self.store.revision(version))
-                    await self.report(f"Your book is ready · v{version} · {self.mode.upper()}\n\nPrivate preview: http://localhost:8787\n\nAsk for edits in this room, for example: 「表紙を夕日の写真に変更して」.\n\nNothing has been published. After reviewing every page and photo, the traveler can authorize this exact version with:\n`{command}`\n\nThis consents to making the book text and selected photographs public. Local judging does not require publication accounts.", thread, "complete")
+                    # Redelivered handoffs reuse the committed version. PDF work and
+                    # notification run from a durable outbox, outside the SSE consumer.
+                    existing = self.store.revision_for_job(job["id"])
+                    if not existing:
+                        self.store.commit(album.model_dump(), job["id"], payload["mode"], payload["sources"])
         self.store.finish_event(self.role, event_id)
 
     async def consume(self):
@@ -171,8 +182,16 @@ class Worker:
             # Keep failed work visible and allow a fresh human request to recover.
             print(self.role, type(exc).__name__, flush=True)
             self.store.finish_event(self.role, entry["id"])
+            job_id = entry["id"] if self.role == "collector" else None
+            if self.role != "collector" and entry.get("sender_kind") == "agent":
+                handoff = re.search(r"MW_HANDOFF (\{.*\})", entry.get("body", ""), re.S)
+                if handoff:
+                    try:
+                        job_id = json.loads(handoff[1])["job"]["id"]
+                    except (ValueError, KeyError, TypeError):
+                        pass
             with self.store.connect() as db:
-                db.execute("UPDATE jobs SET state='failed' WHERE state='working'")
+                db.execute("UPDATE jobs SET state='failed' WHERE id=? AND state='working'", (job_id,))
             safe = str(exc) if isinstance(exc, ValueError) else f"{self.role} could not complete this step ({type(exc).__name__}). Check local service logs/authentication and resend the request."
             await self.report(safe[:800], entry["id"], "error")
 
@@ -182,7 +201,10 @@ class Worker:
             await asyncio.sleep(3)
 
     async def run(self):
-        await asyncio.gather(self.client.listen(self.queue), self.consume(), self.health())
+        tasks = [self.client.listen(self.queue), self.consume(), self.health()]
+        if self.role == "publisher":
+            tasks.append(self.deliveries.run())
+        await asyncio.gather(*tasks)
 
 
 if __name__ == "__main__":

@@ -82,6 +82,7 @@ services:
     environment:
       <<: *agent-env
       AGENT_ROLE: publisher
+      ALBUM_BASE_URL: ${ALBUM_BASE_URL:-http://localhost:8787}
       PUBLISH_ENABLED: ${PUBLISH_ENABLED:-false}
       PUBLISH_GITHUB_REPOSITORY: ${PUBLISH_GITHUB_REPOSITORY:-}
       PUBLISH_GITHUB_BRANCH: ${PUBLISH_GITHUB_BRANCH:-main}

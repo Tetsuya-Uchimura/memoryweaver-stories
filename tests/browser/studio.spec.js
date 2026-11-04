@@ -32,3 +32,13 @@ test('book, evidence, memories, collaboration and privacy are usable', async ({p
   expect(errors).toEqual([]);
   await page.screenshot({path:`.runtime/${testInfo.project.name}-studio.png`,fullPage:true});
 });
+
+test('a completion link opens its saved version', async ({page,request}) => {
+  const versions = await (await request.get('/api/revisions')).json();
+  const version = versions[versions.length - 1].id;
+  const snapshot = await (await request.get('/api/revisions/' + version)).json();
+  await page.goto('/?version=' + version);
+  await expect(page.locator('#version-label')).toContainText('Version ' + version + ' · earlier draft');
+  await expect(page.locator('.cover-title')).toHaveText(snapshot.album.title);
+  await expect(page.locator('.cover > img')).toHaveAttribute('src', new RegExp(snapshot.album.cover_asset_id + '\\.jpg$'));
+});

@@ -13,6 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install PDF renderer and Japanese fonts
+        run: sudo apt-get update && sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-noto-cjk
       - run: pip install -r requirements-dev.txt
       - run: python -m pytest -q
       - run: node --check app/static/app.js

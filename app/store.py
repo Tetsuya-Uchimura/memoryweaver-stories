@@ -25,6 +25,7 @@ class Store:
             CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, request TEXT, base INTEGER, state TEXT, created REAL);
             CREATE TABLE IF NOT EXISTS handled (role TEXT, event TEXT, PRIMARY KEY(role,event));
             CREATE TABLE IF NOT EXISTS approvals (revision INTEGER PRIMARY KEY, digest TEXT, user_id TEXT, event_id TEXT, created REAL, state TEXT, url TEXT);
+            CREATE TABLE IF NOT EXISTS deliveries (revision INTEGER PRIMARY KEY, state TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, next_attempt REAL NOT NULL DEFAULT 0, error TEXT, receipt TEXT);
             """)
 
     def connect(self):
@@ -75,7 +76,33 @@ class Store:
             data = dict(album=album, mode=mode, sources=sources, asset_hashes=hashes)
             cur = db.execute("INSERT INTO revisions(data,job_id,created) VALUES (?,?,?)", (json.dumps(data, ensure_ascii=False), job_id, time.time()))
             db.execute("UPDATE jobs SET state='complete' WHERE id=?", (job_id,))
+            # The preview and its delivery intent are committed atomically.
+            db.execute("INSERT INTO deliveries(revision,state) VALUES (?,'pending')", (cur.lastrowid,))
             return cur.lastrowid
+
+    def revision_for_job(self, job_id):
+        with self.connect() as db:
+            row = db.execute("SELECT id FROM revisions WHERE job_id=?", (job_id,)).fetchone()
+        return self.revision(row[0]) if row else None
+
+    def delivery(self, version):
+        with self.connect() as db:
+            row = db.execute("SELECT * FROM deliveries WHERE revision=?", (version,)).fetchone()
+        if not row:
+            return None
+        value = dict(row)
+        value["receipt"] = json.loads(value["receipt"]) if value["receipt"] else None
+        return value
+
+    def queue_delivery(self, version):
+        with self.connect() as db:
+            if not db.execute("SELECT 1 FROM revisions WHERE id=?", (version,)).fetchone():
+                raise ValueError("That travel-book version does not exist")
+            db.execute("INSERT INTO deliveries(revision,state) VALUES (?,'pending') ON CONFLICT(revision) DO UPDATE SET state='pending',attempts=0,next_attempt=0,error=NULL", (version,))
+
+    def delivery_update(self, version, state, attempts, next_attempt=0, error=None, receipt=None):
+        with self.connect() as db:
+            db.execute("UPDATE deliveries SET state=?,attempts=?,next_attempt=?,error=?,receipt=COALESCE(?,receipt) WHERE revision=?", (state, attempts, next_attempt, error, json.dumps(receipt) if receipt is not None else None, version))
 
     def job(self, request, event_id):
         with self.connect() as db:

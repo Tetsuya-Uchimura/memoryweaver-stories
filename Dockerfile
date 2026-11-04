@@ -1,7 +1,8 @@
 FROM python:3.12-slim
+RUN apt-get update && apt-get install -y --no-install-recommends libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-noto-cjk && rm -rf /var/lib/apt/lists/*
 WORKDIR /workspace
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip,sharing=locked pip install --timeout 60 -r requirements.txt
 COPY app app
 COPY agents agents
 COPY samples samples

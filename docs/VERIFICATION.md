@@ -1,6 +1,6 @@
 # Verification record
 
-Verified on **November 4, 2026 (Asia/Tokyo)** on macOS / Apple Silicon, Docker Desktop Engine 29.1.3. Mattermost runs as the upstream-pinned amd64 image under emulation. Switch was built from official commit `6e4ade5269d65ee38060a9f43b77c5e5b3be2f10`.
+Verified on **November 5, 2026 (Asia/Tokyo)** on macOS / Apple Silicon, Docker Desktop Engine 29.1.3. Mattermost runs as the upstream-pinned amd64 image under emulation. Switch was built from official commit `6e4ade5269d65ee38060a9f43b77c5e5b3be2f10`.
 
 ## Completed
 
@@ -13,14 +13,15 @@ Verified on **November 4, 2026 (Asia/Tokyo)** on macOS / Apple Silicon, Docker D
 | Real protocol compatibility | Operation discovery, connection-state parsing, fenced heartbeat generation, source-history pagination, media downloads, room-document creation/loading and targeted messages |
 | Real sample generation | Six shuffled messages and four actual uploaded photographs from traveler and hana produced a three-chapter book through Switch |
 | Real human revision | Mattermost sunset-cover request produced a new version; second-day tone request changed its prose while preserving the cover |
+| Private artifact delivery | Actual Switch multipart upload produced one top-level Mattermost post from `mw-publisher` with title, version URL, cover JPEG and PDF; verified initial book and two edits (v6–v8), downloaded actual files, compared hashes to saved versions and the local PDF route |
 | Preservation | Earlier versions remained readable; source posts retained their actual author, date and photo references |
 | Approval failure cases | Old-version command rejected; another real human contributor could not approve publication |
 | Local approval/export | Exact current consent produced a nine-file sanitized static export; release verifier passed; no cloud calls |
 | Full stop/start | `down` followed by `up` re-created services, retained six sources and version 5, preserved local-export state, and reconnected all four agents without duplicate versions |
 | Separate local clone | Cloned the committed repository to a clean directory, ran `prepare`, fetched the audited Switch commit from GitHub, generated an independent `.env` with mode 0600, and confirmed registration/internal/admin/traveler secrets differ from the development installation |
-| Unit/contract checks | **19 passed**: chronological evidence, unknown references, verbatim quotes, photo-source correspondence, concurrent edits, stale commits, exact consent, byte-bound photo approval, export allowlist, HTML escaping, no unused-source export, unauthorized writes, EXIF removal, sender identity checks, model subprocess schema/argument handling and secret filtering, mocked GitHub subtree/status contract, public-repository rejection before writes, Cloudflare setup API contract, refusal to reconfigure existing projects, local-token file permissions, and redacted secret handling |
+| Unit/contract checks | **28 passed**: Japanese PDF text and metadata, version-bound artifact caching, private resource fetcher, durable delivery intent, retry and accepted-group recovery, multipart agent-key contract, versioned PDF download, safe preview URL, concurrent rejection isolation; plus chronological evidence, unknown references, verbatim quotes, photo-source correspondence, concurrent edits, stale commits, exact consent, byte-bound photo approval, export allowlist, HTML escaping, no unused-source export, unauthorized writes, EXIF removal, sender identity checks, model subprocess schema/argument handling and secret filtering, mocked GitHub subtree/status contract, public-repository rejection before writes, Cloudflare setup API contract, refusal to reconfigure existing projects, local-token file permissions, and redacted secret handling |
 | GitHub source and CI | Source pushed to private `Tetsuya-Uchimura/memoryweaver-stories`, `main`; initial Verify MemoryWeaver Actions run [41838894668](https://github.com/Tetsuya-Uchimura/memoryweaver-stories/actions/runs/41838894668) succeeded; `production` environment created |
-| Browser checks | **2 passed**: desktop and iPhone-13-sized Chromium viewports using installed Google Chrome; story, evidence dialog, inbox, activity, edit prompts, publication review, photo view, no horizontal overflow, no JS page errors |
+| Browser checks | **4 passed**: saved-version completion links, plus desktop and iPhone-13-sized Chromium viewports using installed Google Chrome; story, evidence dialog, inbox, activity, edit prompts, publication review, photo view, no horizontal overflow, no JS page errors |
 | Source hygiene | Generated local secret values absent from distributable Git files; `.env`, `.runtime`, virtualenv and node_modules ignored |
 
 The integration test is `scripts/smoke.py`; it refuses live AI or enabled cloud publishing. Unit tests exercise model harnesses with controlled subprocess substitutes and GitHub with an in-memory HTTP transport. They verify our adapter contracts, **not model access, output quality, or an actual cloud deployment**.
@@ -33,12 +34,13 @@ The standalone Playwright Chromium download stalled in this environment and was 
 - **Actual approved-book commit → GitHub Actions → Cloudflare Pages deployment and URL callback.** The private repository and source CI are configured; the Publisher's scoped GitHub token, Cloudflare account/project, and production secrets are not yet supplied. `scripts/setup_publishing.py` prepares the optional publishing services; its unit checks use substituted provider responses. No production deployment or public URL is claimed.
 - **A fresh clone on another physical machine.** This machine verified the initial fresh service setup and subsequent full restarts, not independent Linux/Windows hardware or network conditions.
 - **Real iOS Safari, Android browsers, and accessibility assistive devices.** Mobile layout was tested in a Chromium device viewport, not on physical phones.
-- **Crash at every instruction boundary, very large albums, multi-file batch coalescing, and long-running provider outages.** See the explicit MVP limits in the architecture and security documents.
+- **Crash at every instruction boundary, very large albums and long-running provider outages.** See the explicit MVP limits in the architecture and security documents.
 - **Demo-video recording/upload and hackathon submission.** A detailed storyboard is provided in `docs/DEMO.md`; no external upload or submission was made.
 
 ## Re-run
 
 ```sh
+# Apple Silicon with Homebrew Pango: prefix with DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib
 .venv/bin/python -m pytest -q
 node --check app/static/app.js
 python3 scripts/check_secrets.py

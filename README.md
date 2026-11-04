@@ -75,6 +75,8 @@ For a new event, first post its actual date, words and photograph, then request 
 
 The book updates automatically. Read the original posts behind a chapter, inspect the collaboration feed, switch to photographs, or revisit earlier versions. On a phone, navigation moves to the bottom of the screen.
 
+**Receive the finished work without leaving Mattermost.** Publisher posts the title and version-specific web album URL directly in the same private channel, with a cover-image preview and the actual Japanese PDF attached in one post. Edits produce a new completion post and updated PDF. Switch's standard media API carries both files using the Publisher bot; no additional Mattermost credentials or PDF service are needed. See [Mattermost delivery](docs/MATTERMOST-DELIVERY.md) for details and retry commands.
+
 ## Why Switch is essential
 
 ```mermaid
@@ -140,6 +142,8 @@ npm run test:browser
 ```
 
 Browser checks expect the Docker stack to be running in replay mode with the sample book generated. The integration check drives real Mattermost requests:
+
+Host-side PDF tests require Pango; on Apple Silicon with Homebrew, use `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib .venv/bin/python -m pytest -q` after installing Pango. The judge's Docker setup already includes native libraries and Japanese fonts; no host font or PDF installation is required.
 
 If you prefer an already installed Google Chrome, use `PLAYWRIGHT_CHANNEL=chrome npm run test:browser` instead of downloading Chromium. A real iPhone or Safari still needs separate device testing.
 

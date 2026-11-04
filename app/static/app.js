@@ -123,7 +123,14 @@ panel.addEventListener('click', e => { if (e.target === panel) { const r = panel
 $('#read-button').onclick = () => { document.body.classList.toggle('reading'); $('#read-button').textContent = document.body.classList.contains('reading') ? '← Back to studio' : 'Reading mode ↗'; };
 async function connect() {
   try {
-    const r = await fetch('/api/state'); if (!r.ok) throw new Error(); render(await r.json());
+    const r = await fetch('/api/state'); if (!r.ok) throw new Error();
+    const version = new URLSearchParams(location.search).get('version');
+    if (version && /^[1-9]\d*$/.test(version)) {
+      const snapshot = await fetch('/api/revisions/' + version);
+      if (snapshot.ok) pinned = await snapshot.json();
+      else toast('This book version could not be found. Showing the latest version.');
+    }
+    render(await r.json());
     stream = new EventSource('/api/events');
     stream.onmessage = e => render(JSON.parse(e.data));
     stream.onerror = () => { $('#connection-label').textContent = 'Reconnecting to your studio…'; };

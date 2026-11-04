@@ -12,6 +12,7 @@ MemoryWeaver is a **single-user, loopback-only development studio** with a priva
 - Switch telemetry and third-party avatar generation are disabled in this stack.
 - Browser writes require an internal bearer key unavailable to the browser. Editing and publication intent enter through Mattermost instead.
 - Uploaded images are decoded, resized, re-encoded as JPEG, and stripped of EXIF/GPS. Supported image size is 20 MB and 40 megapixels. Non-image files are not imported into the book.
+- Finished books and cover photographs are sent back into the same private Mattermost room automatically using Publisher's Switch media endpoint. This requested private delivery is separate from public GitHub/Cloudflare approval. PDFs include selected narration, quotations and photos; they are available to channel members and stored in local Docker volumes. Unused source posts are excluded. Rendering cannot fetch arbitrary network URLs or local files.
 - Source and model strings are escaped before HTML rendering. Preview and static exports use restrictive content security policies and `nosniff` headers.
 
 ## What local-only does and does not mean

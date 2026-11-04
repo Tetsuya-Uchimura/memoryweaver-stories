@@ -1,0 +1,142 @@
+"""Private, version-bound travel-book artifacts. Never invokes cloud publication."""
+from __future__ import annotations
+
+import hashlib
+from html import escape
+import json
+import os
+from pathlib import Path
+import re
+import tempfile
+
+from agents.publish import publication_digest, selected_assets
+
+TEMPLATE_VERSION = "private-pdf-v2"
+
+
+def album_base_url():
+    from urllib.parse import urlsplit
+    value = os.getenv("ALBUM_BASE_URL", "http://localhost:8787").rstrip("/")
+    parsed = urlsplit(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment or any(c.isspace() for c in value):
+        raise ValueError("ALBUM_BASE_URL must be a browser-accessible HTTP(S) base URL without credentials, query or fragment")
+    return value
+
+
+def album_url(version):
+    return f"{album_base_url()}/?version={int(version)}"
+
+
+def artifact_paths(store, version):
+    root = store.root / "books" / ("v" + str(int(version)))
+    return root / "MemoryWeaver-v{}.pdf".format(int(version)), root / "MemoryWeaver-cover-v{}.jpg".format(int(version)), root / "artifact.json"
+
+
+def read_photographs(store, revision):
+    assets = {item["id"]: item for item in store.all("assets")}
+    photos = {}
+    for asset_id in selected_assets(revision):
+        item = assets.get(asset_id)
+        if not item:
+            raise ValueError("A selected photograph is unavailable")
+        if item.get("sample") and re.fullmatch(r"[a-z-]+", asset_id):
+            path = Path(__file__).resolve().parents[1] / "app/static/assets" / (asset_id + ".jpg")
+        elif not item.get("sample") and re.fullmatch(r"[a-f0-9]{24}", asset_id):
+            path = store.root / "media" / (asset_id + ".jpg")
+        else:
+            raise ValueError("Invalid photograph reference")
+        data = path.read_bytes()
+        if hashlib.sha256(data).hexdigest() != revision.get("asset_hashes", {}).get(asset_id):
+            raise ValueError("A photograph changed after this version was saved. Generate a new book before delivery.")
+        photos[asset_id] = data
+    return photos, assets
+
+
+def private_fetcher(photos):
+    """WeasyPrint can fetch only the exact in-memory images in this version.
+
+    Never delegate to its default fetcher: no HTTP, file://, data:, CSS imports,
+    local secrets, or references provided by a user/model can be read here.
+    """
+    allowed = {"https://memoryweaver.invalid/photos/" + asset_id + ".jpg": data for asset_id, data in photos.items()}
+    def fetch(url, *args, **kwargs):
+        if url not in allowed:
+            raise ValueError("PDF resource is outside the selected photograph allowlist")
+        return {"string": allowed[url], "mime_type": "image/jpeg"}
+    return fetch
+
+
+def pdf_html(revision, assets):
+    album = revision["album"]
+    version = revision["version"]
+    image = lambda asset_id: "https://memoryweaver.invalid/photos/" + asset_id + ".jpg"
+    chapters = []
+    for chapter in album["chapters"]:
+        figures = []
+        for start in range(0, len(chapter["asset_ids"]), 2):
+            cells = ''.join('<td><img alt="Travel photograph" src="' + image(asset_id) + '"><p class="credit">' + escape(assets[asset_id]["credit"]) + '</p></td>' for asset_id in chapter["asset_ids"][start:start + 2])
+            figures.append('<table class="photographs"><tr>' + cells + '</tr></table>')
+        paragraphs = ''.join('<p class="prose">' + escape(paragraph) + '</p>' for paragraph in chapter["body"].split("\n\n"))
+        quote = '<blockquote>「' + escape(chapter["quote"]) + '」</blockquote>' if chapter["quote"] else ''
+        chapters.append(f'<section class="chapter"><div class="eyebrow">DAY {chapter["day"]:02} · {escape(chapter["date"])}</div><h2>{escape(chapter["title"])}</h2>{"".join(figures)}{paragraphs}{quote}</section>')
+    credits = []
+    for asset_id in selected_assets(revision):
+        item = assets[asset_id]
+        links = ""
+        if item.get("sample"):
+            links = f'<br><a href="{escape(item["source_url"], quote=True)}">Original photograph</a> · <a href="{escape(item["license_url"], quote=True)}">License</a>'
+        credits.append('<p><strong>' + escape(item["label"]) + '</strong><br>' + escape(item["credit"]) + links + '</p>')
+    sample_note = "Licensed photographs illustrate fictional sample memories." if all(assets[a].get("sample") for a in selected_assets(revision)) else "A private copy of your travel book."
+    title_size = 32 if len(album["title"]) < 25 else 23 if len(album["title"]) < 55 else 18
+    css = f"""
+    @page {{size:A4;margin:20mm 19mm 22mm;@bottom-left {{content:'MemoryWeaver · v{version}';font:8pt sans-serif;color:#89927d}}@bottom-right {{content:counter(page);font:8pt sans-serif;color:#89927d}}}}
+    @page cover {{margin:0;@bottom-left {{content:none}}@bottom-right {{content:none}}}}
+    * {{box-sizing:border-box}} body {{margin:0;color:#294339;font-family:'Noto Serif CJK JP','Hiragino Mincho ProN',serif;font-size:10.5pt;line-height:1.95}}
+    .cover {{page:cover;position:relative;width:210mm;height:297mm;overflow:hidden;background:#24483d;break-after:page;color:#fff}}
+    .cover img {{position:absolute;top:0;left:0;width:210mm;height:297mm;object-fit:cover}}
+    .shade {{position:absolute;top:0;left:0;width:210mm;height:297mm;background:linear-gradient(to bottom,transparent 10%,#102d26e6 100%)}}
+    .cover-top {{position:absolute;top:20mm;left:20mm;right:20mm;font-family:sans-serif;font-size:8pt;letter-spacing:2pt}}
+    .cover-copy {{position:absolute;left:20mm;right:20mm;bottom:25mm}} .cover h1 {{font-size:{title_size}pt;font-weight:400;line-height:1.65;margin:8mm 0;overflow-wrap:anywhere}}
+    .cover .subtitle {{font-size:11pt;white-space:pre-wrap}} .cover .dates {{font:8pt sans-serif;letter-spacing:1pt;border-top:1px solid #ffffff77;margin-top:12mm;padding-top:5mm}}
+    .eyebrow {{font:8pt sans-serif;letter-spacing:1.5pt;color:#81906e}} .cover .eyebrow {{color:#e1eac7}}
+    .chapter {{break-before:page}} h2 {{font-size:21pt;font-weight:400;line-height:1.55;margin:6mm 0 9mm;break-after:avoid;overflow-wrap:anywhere}}
+    .prose {{white-space:pre-wrap;overflow-wrap:anywhere;orphans:3;widows:3;margin:6mm 0}}
+    .photographs {{table-layout:fixed;width:100%;border-collapse:collapse;margin:0 0 5mm;break-inside:avoid}} td {{padding:0 2mm;vertical-align:top}} td:first-child {{padding-left:0}} td:last-child {{padding-right:0}}
+    td img {{width:100%;height:76mm;object-fit:cover}} .credit {{font:7pt/1.6 sans-serif;color:#7f8e75;margin:2mm 0 0;overflow-wrap:anywhere}}
+    blockquote {{border-left:2px solid #bfcc9e;margin:9mm 0;padding:2mm 0 2mm 6mm;color:#638150;font-size:12pt;white-space:pre-wrap;overflow-wrap:anywhere}}
+    .colophon {{break-before:page;font-size:9pt}} .colophon p {{margin:7mm 0;overflow-wrap:anywhere}} a {{color:#4a704e}} .note {{font:8pt/1.9 sans-serif;color:#87927b}}
+    """
+    return f'<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="author" content="MemoryWeaver"><title>{escape(album["title"])} · v{version}</title><style>{css}</style></head><body><section class="cover"><img alt="Cover photograph" src="{image(album["cover_asset_id"])}"><div class="shade"></div><div class="cover-top">A MEMORYWEAVER TRAVEL JOURNAL</div><div class="cover-copy"><div class="eyebrow">{escape(album["location"])}</div><h1>{escape(album["title"])}</h1><p class="subtitle">{escape(album["subtitle"])}</p><div class="dates">{escape(album["date_label"])} · VERSION {version} · {escape(revision["mode"].upper())}</div></div></section>{"".join(chapters)}<section class="colophon"><div class="eyebrow">THE PEOPLE BEHIND THE PICTURES</div><h2>旅を、もう一度。</h2>{"".join(credits)}<p class="note">{sample_note}<br>{escape(revision["mode"].upper())} edition · Version {version}. Generated for your private Mattermost room. Cloud publication requires separate explicit approval.</p></section></body></html>'
+
+
+def _atomic_write(path, contents):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=".artifact-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(contents)
+        os.replace(temporary, path)
+    finally:
+        if Path(temporary).exists():
+            Path(temporary).unlink()
+
+
+def render_artifacts(store, revision):
+    """Return PDF and cover paths. All heavy rendering runs off the async loop."""
+    pdf, cover, manifest_path = artifact_paths(store, revision["version"])
+    fingerprint = publication_digest(revision) + ":" + TEMPLATE_VERSION
+    if pdf.is_file() and cover.is_file() and manifest_path.is_file():
+        manifest = json.loads(manifest_path.read_text())
+        if manifest.get("fingerprint") == fingerprint and hashlib.sha256(pdf.read_bytes()).hexdigest() == manifest.get("pdf_sha256") and hashlib.sha256(cover.read_bytes()).hexdigest() == manifest.get("cover_sha256"):
+            return pdf, cover, manifest
+    photos, assets = read_photographs(store, revision)
+    from weasyprint import HTML
+    contents = HTML(string=pdf_html(revision, assets), url_fetcher=private_fetcher(photos)).write_pdf(optimize_images=True, jpeg_quality=85, dpi=160)
+    if not contents.startswith(b"%PDF-") or len(contents) > 20 * 1024 * 1024:
+        raise ValueError("Travel-book PDF is invalid or exceeds 20 MB; reduce the selected photographs and retry")
+    cover_bytes = photos[revision["album"]["cover_asset_id"]]
+    manifest = {"version": revision["version"], "fingerprint": fingerprint, "pdf_sha256": hashlib.sha256(contents).hexdigest(), "cover_sha256": hashlib.sha256(cover_bytes).hexdigest()}
+    _atomic_write(pdf, contents)
+    _atomic_write(cover, cover_bytes)
+    _atomic_write(manifest_path, json.dumps(manifest).encode())
+    return pdf, cover, manifest

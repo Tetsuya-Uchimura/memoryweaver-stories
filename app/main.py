@@ -87,6 +87,17 @@ def publication(version: int):
     return {"command": approval_command(value), "digest": publication_digest(value), "asset_ids": selected_assets(value)}
 
 
+@app.get("/api/revisions/{version}/pdf")
+def download_pdf(version: int):
+    from agents.artifacts import artifact_paths
+    if version < 1 or not store.revision(version):
+        raise HTTPException(404)
+    pdf, _, _ = artifact_paths(store, version)
+    if not pdf.is_file():
+        raise HTTPException(409, "This version's PDF is not ready. Ask @mw-publisher PDFを再送して v" + str(version) + " in Mattermost.")
+    return FileResponse(pdf, media_type="application/pdf", filename=pdf.name)
+
+
 @app.get("/api/events")
 async def events(request: Request):
     async def stream():

@@ -1,5 +1,6 @@
 """Real Mattermost → Switch integration. Runs only with replay and cloud OFF."""
 import asyncio
+import hashlib
 import os
 from pathlib import Path
 import subprocess
@@ -17,7 +18,7 @@ async def main():
         raise SystemExit("Smoke test requires AI_MODE=replay and PUBLISH_ENABLED=false")
     store = Store()
     if not store.get("seed:complete"):
-        subprocess.run([sys.executable, "-m", "scripts.seed", "--generate"], check=True)
+        subprocess.run([sys.executable, "-m", "scripts.seed"], check=True)
     channel = store.get("switch")["channel_id"]
     async with httpx.AsyncClient(base_url=os.environ["MATTERMOST_URL"], timeout=30) as mm:
         login = await mm.post("/api/v4/users/login", json={"login_id": os.environ["MATTERMOST_USER"], "password": os.environ["MATTERMOST_USER_PASSWORD"]})
@@ -37,6 +38,44 @@ async def main():
                 await asyncio.sleep(1)
             raise AssertionError("No expected preview update; inspect agent logs and collaboration feed")
 
+        async def wait_for_artifacts(revision):
+            version = revision["version"]
+            deadline = time.monotonic() + 120
+            post = None
+            while time.monotonic() < deadline:
+                response = await mm.get(f"/api/v4/channels/{channel}/posts", headers=headers, params={"per_page": 200})
+                response.raise_for_status()
+                posts = response.json()["posts"].values()
+                post = next((p for p in posts if f"MemoryWeaver · v{version} · REPLAY" in p["message"].splitlines() and len(p.get("file_ids", [])) == 2), None)
+                if post and (store.delivery(version) or {}).get("state") == "sent":
+                    break
+                await asyncio.sleep(1)
+            else:
+                raise AssertionError(f"No complete Mattermost PDF/cover delivery for v{version}: {store.delivery(version)}")
+            publisher = await mm.get("/api/v4/users/username/mw-publisher", headers=headers)
+            publisher.raise_for_status()
+            assert publisher.json()["is_bot"]
+            assert post["user_id"] == publisher.json()["id"]
+            assert not post["root_id"]  # directly visible in the original channel
+            assert revision["album"]["title"] in post["message"]
+            assert f"/?version={version}" in post["message"]
+            received = {}
+            for file_id in post["file_ids"]:
+                info = await mm.get(f"/api/v4/files/{file_id}/info", headers=headers)
+                info.raise_for_status()
+                content = await mm.get(f"/api/v4/files/{file_id}", headers=headers)
+                content.raise_for_status()
+                received[info.json()["mime_type"]] = content.content
+            assert received["application/pdf"].startswith(b"%PDF-")
+            receipt = store.delivery(version)["receipt"]
+            assert hashlib.sha256(received["application/pdf"]).hexdigest() == receipt["pdf_sha256"]
+            assert hashlib.sha256(received["image/jpeg"]).hexdigest() == revision["asset_hashes"][revision["album"]["cover_asset_id"]]
+            async with httpx.AsyncClient() as web:
+                download = await web.get(os.getenv("WEB_URL", "http://web:8787") + f"/api/revisions/{version}/pdf")
+                download.raise_for_status()
+                assert download.content == received["application/pdf"]
+            print(f"PASS Mattermost delivery v{version}: Publisher bot, title, version URL, cover and downloadable PDF in one channel post")
+
         before = (store.revision() or {}).get("version", 0)
         await post("@mw-collector 今回の沖縄旅行をアルバムにして")
         first = await wait_version(before)
@@ -45,17 +84,36 @@ async def main():
         assert {s["author"] for s in first["sources"]} == {"traveler", "hana"}
         stale_command = approval_command(first)
         print("PASS generation: real Mattermost posts → Switch documents → three-chapter preview")
+        await wait_for_artifacts(first)
 
         await post("@mw-collector 表紙を夕日の写真に変更して")
         second = await wait_version(first["version"], lambda r: r["album"]["cover_asset_id"] == "sunset")
         assert store.revision(first["version"])["album"]["cover_asset_id"] == first["album"]["cover_asset_id"]
         print("PASS revision: sunset cover, prior version preserved")
+        await wait_for_artifacts(second)
 
         await post("@mw-collector 2日目の文章をもっと感動的にして")
         third = await wait_version(second["version"])
         assert third["album"]["chapters"][1]["body"] != second["album"]["chapters"][1]["body"]
         assert third["album"]["cover_asset_id"] == "sunset"
         print("PASS revision: day-two prose updated, sunset cover preserved")
+        await wait_for_artifacts(third)
+
+        await post(f"@mw-publisher PDFを再送して v{third['version']}")
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline:
+            delivery = store.delivery(third["version"])
+            if delivery["state"] == "sent" and delivery["receipt"].get("recovered"):
+                break
+            await asyncio.sleep(1)
+        else:
+            raise AssertionError("Publisher did not reconcile its accepted attachment group")
+        response = await mm.get(f"/api/v4/channels/{channel}/posts", headers=headers, params={"per_page": 200})
+        response.raise_for_status()
+        marker = f"MemoryWeaver · v{third['version']} · REPLAY"
+        assert sum(marker in p["message"].splitlines() and bool(p.get("file_ids")) for p in response.json()["posts"].values()) == 1
+        assert store.revision()["version"] == third["version"]
+        print("PASS delivery recovery: Mattermost retry reconciled the real Switch attachment group without another post or book version")
 
         event_start = len(store.events())
         await post(stale_command)

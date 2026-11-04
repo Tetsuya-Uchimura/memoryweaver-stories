@@ -71,6 +71,26 @@ class Switch:
         response.raise_for_status()
         return response.content
 
+    async def upload(self, attachments, caption, thread_id=None):
+        """Official multipart room media route, bridged as this agent's bot.
+
+        Repeated `files` parts share Switch's attachment-group marker and
+        become a single Mattermost post. No Mattermost admin token is needed.
+        """
+        data = {"caption": caption}
+        if thread_id is not None:
+            data["thread_id"] = thread_id
+        response = await self.http.post(
+            f"/agents/{self.agent['id']}/rooms/{self.room_id}/media",
+            files=[("files", (name, contents, mimetype)) for name, contents, mimetype in attachments],
+            data=data,
+        )
+        response.raise_for_status()
+        result = response.json()
+        if not result.get("ok") or len(result.get("attachments", [])) != len(attachments):
+            raise ValueError("Switch did not accept the complete artifact attachment group")
+        return result
+
     async def listen(self, queue):
         """Heartbeat runs independently of model calls. Reconnect with a stable ID."""
         await self.discover()

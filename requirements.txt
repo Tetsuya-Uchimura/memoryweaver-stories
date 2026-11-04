@@ -6,14 +6,22 @@ anyio==4.16.0
     # via
     #   httpx
     #   starlette
+brotli==1.2.1
+    # via fonttools
 certifi==2026.10.23
     # via
     #   httpcore
     #   httpx
+cffi==2.1.1
+    # via weasyprint
 click==8.5.0
     # via uvicorn
+cssselect2==0.10.1
+    # via weasyprint
 fastapi==0.115.12
     # via -r requirements.in
+fonttools==4.68.0
+    # via weasyprint
 h11==0.16.0
     # via
     #   httpcore
@@ -27,15 +35,29 @@ idna==3.20
     #   anyio
     #   httpx
 pillow==11.2.1
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   weasyprint
+pycparser==3.12
+    # via cffi
 pydantic==2.14.2
     # via fastapi
 pydantic-core==2.50.2
     # via pydantic
+pydyf==0.13.0
+    # via weasyprint
+pyphen==0.18.1
+    # via weasyprint
 python-multipart==0.0.20
     # via -r requirements.in
 starlette==0.46.2
     # via fastapi
+tinycss2==1.5.1
+    # via
+    #   cssselect2
+    #   weasyprint
+tinyhtml5==2.1.0
+    # via weasyprint
 typing-extensions==4.16.0
     # via
     #   anyio
@@ -47,3 +69,12 @@ typing-inspection==0.4.4
     # via pydantic
 uvicorn==0.34.2
     # via -r requirements.in
+weasyprint==66.0
+    # via -r requirements.in
+webencodings==0.6.1
+    # via
+    #   cssselect2
+    #   tinycss2
+    #   tinyhtml5
+zopfli==0.4.3
+    # via fonttools
