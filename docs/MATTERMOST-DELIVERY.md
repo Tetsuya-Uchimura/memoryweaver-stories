@@ -75,6 +75,6 @@ Switch acceptance and downstream Mattermost delivery are asynchronous. History r
 python3 scripts/dev.py compose run --rm --no-deps -T bootstrap python -m scripts.smoke
 ```
 
-This uses real Mattermost and Switch in replay mode with public publishing disabled. It verifies initial delivery and two edited versions, the Publisher bot identity, top-level channel placement, title and version URL, both actual attachments, PDF bytes, changed cover bytes, and the local PDF download route. It also retains the publication-consent checks.
+This uses real Mattermost and Switch in replay mode with public publishing disabled. It verifies initial delivery and two edited versions, the Publisher bot identity, top-level channel placement, title and version URL, both actual attachments, PDF bytes, changed cover bytes, and the local PDF download route. A human retry also reconciles the actual Switch attachment group without duplicate posts or regenerated books. It retains the publication-consent checks. The complete check passed in an independently initialized Docker project from a fresh GitHub clone; see [verification](VERIFICATION.md).
 
 For host-side unit tests, WeasyPrint needs Pango installed. On Apple Silicon with Homebrew libraries, use `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib .venv/bin/python -m pytest -q`. Docker includes all native libraries and Japanese fonts automatically; judges do not need this host-specific setup.
