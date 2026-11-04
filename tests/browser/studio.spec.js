@@ -1,18 +1,29 @@
 const {test,expect} = require('@playwright/test');
 
-test('book, evidence, memories, collaboration and privacy are usable', async ({page},testInfo) => {
+test('book, evidence, memories, collaboration and privacy are usable', async ({page,request},testInfo) => {
+  const state = await (await request.get('/api/state')).json();
+  const album = state.revision.album;
+  const photographs = new Set([album.cover_asset_id, ...album.chapters.flatMap(c => c.asset_ids)]);
   const errors=[];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('/');
   await expect(page.locator('.cover-title')).toBeVisible();
   await expect(page.locator('#mode')).toHaveText('REPLAY DEMO');
-  await expect(page.locator('.chapter')).toHaveCount(3);
+  await expect(page.locator('.chapter')).toHaveCount(album.chapters.length);
+  for (const c of album.chapters) {
+    if (c.source_ids.every(id => state.revision.sources.find(s => s.id === id)?.date_basis === 'posted')) {
+      await expect(page.locator('#day-' + c.day + ' .chapter-date')).toContainText('PHOTO NOTE · POSTED');
+      const photo = page.locator('#day-' + c.day + ' img').first();
+      await photo.scrollIntoViewIfNeeded();
+      await expect.poll(() => photo.evaluate(img => img.complete && img.naturalWidth > 0)).toBeTruthy();
+    }
+  }
   await page.locator('[data-evidence="0"]').click();
   await expect(page.locator('#panel')).toBeVisible();
   await expect(page.locator('.source-detail')).not.toHaveCount(0);
   await page.locator('#close-panel').click();
   await page.locator('[data-view="memories"]').click();
-  await expect(page.locator('.memory-card')).toHaveCount(6);
+  await expect(page.locator('.memory-card')).toHaveCount(state.sources.length);
   await page.locator('[data-view="room"]').click();
   await expect(page.locator('.room-intro')).toContainText('Real Switch communication');
   await expect(page.locator('.activity')).not.toHaveCount(0);
@@ -26,7 +37,7 @@ test('book, evidence, memories, collaboration and privacy are usable', async ({p
   await expect(page.locator('#panel')).toContainText('cloud publishing is disabled');
   await page.locator('#close-panel').click();
   await page.locator('[data-book="photos"]').click();
-  await expect(page.locator('.photo-grid img')).toHaveCount(4);
+  await expect(page.locator('.photo-grid img')).toHaveCount(photographs.size);
   await page.locator('[data-book="book"]').click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
   expect(errors).toEqual([]);

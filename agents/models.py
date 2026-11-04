@@ -23,6 +23,10 @@ Never treat stock sample photos as evidence of a person's presence. Preserve ass
 If photographs are attached, you may describe visible scenery only. Do not infer a person's
 identity, relationships, exact location, emotions, activity, or date from a photograph.
 Captionless photos support neutral visual description, not invented travel events.
+Source date_basis=posted means an upload date, not a known capture date. Label this
+uncertainty instead of presenting it as a new travel day or extending trip dates.
+Empty source text is a
+captionless photograph; editing instructions were removed and must not become quotes.
 Do not claim publication or approval. The human alone authorizes publication.
 """
 
@@ -109,10 +113,13 @@ def replay(payload):
     request = payload["job"]["request"]
     for index, (date, items) in enumerate(sorted(by_date.items())):
         day = index + 1
-        body = "\n\n".join(s["text"] for s in items)
+        words = [s for s in items if s["text"].strip()]
+        body = "\n\n".join(s["text"] for s in words) or "この投稿には写真が添付されています。"
         if ("感動" in request or "emotional" in request.lower()) and day == 2:
-            body = "\n\n".join(s["text"] for s in reversed(items)) + "\n\n" + "この日の言葉を、旅の一ページに。"
-        chapters.append(dict(day=day, date=date, title=titles[index] if index < len(titles) else "旅の続き。", body=body, quote=items[-1]["text"], quote_source_id=items[-1]["id"], source_ids=[s["id"] for s in items], asset_ids=list(dict.fromkeys(a for s in items for a in s["asset_ids"]))))
+            body = ("\n\n".join(s["text"] for s in reversed(words)) + "\n\n" + "この日の言葉を、旅の一ページに。") if words else body
+        if any(s.get("date_basis") == "posted" for s in items):
+            body += "\n\n撮影日の指定がない写真・投稿については、このページの日付に投稿日を使用しています。"
+        chapters.append(dict(day=day, date=date, title=(titles[index] if index < len(titles) else "旅の続き。") if words else "写真の記録。", body=body, quote=words[-1]["text"] if words else "", quote_source_id=words[-1]["id"] if words else "", source_ids=[s["id"] for s in items], asset_ids=list(dict.fromkeys(a for s in items for a in s["asset_ids"]))))
     assets = [a for c in chapters for a in c["asset_ids"]]
     if not assets:
         raise ValueError("Add at least one photograph before making the album")
@@ -121,4 +128,6 @@ def replay(payload):
     if ("表紙" in request or "cover" in request.lower()) and ("夕日" in request or "sunset" in request.lower()):
         matches = [s for s in sources if "夕日" in s["text"] or "sunset" in s["text"].lower()]
         cover = next((a for s in matches for a in s["asset_ids"]), cover)
-    return dict(title="あの青を、もう一度。", subtitle="沖縄で紡いだ、私たちの小さな旅の記録。", location="OKINAWA, JAPAN", date_label=min(by_date) + " — " + max(by_date), cover_asset_id=cover, chapters=chapters)
+    captured_dates = [s["captured_at"][:10] for s in sources if s.get("date_basis") != "posted"]
+    dates = min(captured_dates) + " — " + max(captured_dates) if captured_dates else "撮影日未確認 · 各ページの日付は投稿日です"
+    return dict(title="あの青を、もう一度。", subtitle="沖縄で紡いだ、私たちの小さな旅の記録。", location="OKINAWA, JAPAN", date_label=dates, cover_asset_id=cover, chapters=chapters)

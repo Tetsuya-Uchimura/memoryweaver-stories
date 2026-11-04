@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -13,6 +14,7 @@ class Source(Strict):
     author: str
     text: str
     captured_at: str
+    date_basis: Literal["captured", "posted"] = "captured"
     asset_ids: list[str] = Field(default_factory=list)
 
 

@@ -15,9 +15,13 @@ from agents.switch import Switch
 from agents.models import harness, replay
 
 ROLES = ["collector", "storyteller", "editor", "publisher"]
-GENERATION = re.compile(r"アルバム|旅行記|album|travelogue|generate|story", re.I)
-EDIT = re.compile(r"変更|反映|追加|感動|修正|もっと|表紙|cover|revise|edit|emotional|include|add", re.I)
+GENERATION = re.compile(r"アルバム|旅行記|\b(?:albums?|travelogue|generate|story|storybook)\b", re.I)
+EDIT = re.compile(r"変更|反映|追加|感動|修正|もっと|表紙|\b(?:cover|revise|edit|emotional|include|add)\b", re.I)
 STAMP = re.compile(r"^\[(\d{4}-\d{2}-\d{2}T[^\]]+)\]\s*")
+
+
+def instruction_text(body):
+    return bool(GENERATION.search(body) or EDIT.search(body) or body.startswith(("PUBLISH ", "MemoryWeaver sample")) or "@mw-" in body)
 
 
 class Worker:
@@ -43,8 +47,14 @@ class Worker:
                 continue
             body = entry.get("body", "")
             match = STAMP.match(body)
-            if not match and (GENERATION.search(body) or EDIT.search(body) or body.startswith(("PUBLISH ", "MemoryWeaver sample")) or "@mw-" in body):
-                continue
+            photographs = [a for a in entry.get("attachments", []) if a.get("mimetype", "").startswith("image/")]
+            if not match and instruction_text(body):
+                if not photographs:
+                    continue
+                # A request and its photographs are independent inputs. Keep
+                # caption lines, but never quote an editing instruction as a memory.
+                body = "\n".join(line for line in body.splitlines() if STAMP.match(line) or not instruction_text(line)).strip()
+                match = STAMP.match(body)
             if not body.strip() and not entry.get("attachments"):
                 continue
             timestamp = datetime.fromtimestamp(entry["timestamp"] / 1000, timezone.utc).isoformat()
@@ -54,9 +64,7 @@ class Worker:
             old = next((s for s in self.store.all("sources") if s["id"] == entry["id"]), None)
             asset_ids = list(old["asset_ids"]) if old else []
             if not old:
-                for attachment in entry.get("attachments", []):
-                    if not attachment.get("mimetype", "").startswith("image/"):
-                        continue
+                for attachment in photographs:
                     if attachment.get("size", 0) > 20 * 1024 * 1024:
                         raise ValueError("A photograph exceeds 20 MB; resize it and resend")
                     data = await self.client.download(attachment["mxc"])
@@ -69,8 +77,30 @@ class Worker:
                             response = await http.post(os.getenv("WEB_URL", "http://localhost:8787") + "/internal/media", headers={"Authorization": "Bearer " + os.environ["WEB_INTERNAL_TOKEN"]}, files={"file": ("photo.jpg", data, "image/jpeg")})
                             response.raise_for_status()
                             asset_ids.append(response.json()["id"])
-            source = Source(id=entry["id"], author=entry["sender_name"], text=body, captured_at=timestamp, asset_ids=asset_ids)
+            source = Source(id=entry["id"], author=entry["sender_name"], text=body, captured_at=timestamp, date_basis="captured" if match else "posted", asset_ids=asset_ids)
             self.store.put("sources", source.model_dump())
+
+    async def generate(self, entry, job_id=None):
+        """Build evidence and hand off through Switch, including attached requests.
+
+        An operator can recover a previously ignored attachment with a distinct
+        processing job ID while retaining the original, authoritative source post.
+        """
+        event_id = entry["id"]
+        thread = entry.get("thread_id") or event_id
+        job = self.store.job(entry.get("body", ""), job_id or event_id)
+        if not job:
+            return
+        await self.report("I’m gathering the photographs and everyone’s words. Capture dates will guide the chapters; missing details stay unknown. · " + self.mode.upper(), thread)
+        entries = await self.client.history()
+        await self.collect(entries)
+        sources = sorted(self.store.all("sources"), key=lambda s: s["captured_at"])
+        if not sources:
+            raise ValueError("Post memories and photographs before requesting an album")
+        payload = dict(job=job, sources=sources, assets=self.store.all("assets"), previous=self.store.revision(), mode=self.mode)
+        document_id = await self.client.document("evidence-" + hashlib.sha256(job["id"].encode()).hexdigest()[:12], payload)
+        await self.report(f"Collected {len(sources)} source posts from {len(set(s['author'] for s in sources))} contributors. Evidence is shared in the Switch room document.", thread)
+        await self.client.handoff("storyteller", document_id, job, thread)
 
     async def handle(self, entry):
         event_id = entry["id"]
@@ -81,18 +111,7 @@ class Worker:
         human = entry.get("sender_kind") == "user"
         if self.role == "collector" and human:
             if "PUBLISH " not in body and "@mw-publisher" not in body and ("@mw-collector" in body or GENERATION.search(body) or EDIT.search(body)) and not STAMP.match(body):
-                job = self.store.job(body, event_id)
-                if job:
-                    await self.report("I’m gathering the photographs and everyone’s words. Capture dates will guide the chapters; missing details stay unknown. · " + self.mode.upper(), thread)
-                    entries = await self.client.history()
-                    await self.collect(entries)
-                    sources = sorted(self.store.all("sources"), key=lambda s: s["captured_at"])
-                    if not sources:
-                        raise ValueError("Post memories and photographs before requesting an album")
-                    payload = dict(job=job, sources=sources, assets=self.store.all("assets"), previous=self.store.revision(), mode=self.mode)
-                    document_id = await self.client.document("evidence-" + hashlib.sha256(event_id.encode()).hexdigest()[:12], payload)
-                    await self.report(f"Collected {len(sources)} source posts from {len(set(s['author'] for s in sources))} contributors. Evidence is shared in the Switch room document.", thread)
-                    await self.client.handoff("storyteller", document_id, job, thread)
+                await self.generate(entry)
             else:
                 await self.collect([entry])
         elif self.role == "publisher" and human and body.startswith("PUBLISH "):

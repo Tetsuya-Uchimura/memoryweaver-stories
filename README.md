@@ -73,6 +73,8 @@ Ask in Mattermost:
 
 For a new event, first post its actual date, words and photograph, then request an update. Plain generation/edit phrases also work; mentioning the Collector is the most reliable way to distinguish instructions from memories. The book UI’s editing dialog prepares an instruction to copy into Mattermost; it does not impersonate you or silently send a message.
 
+You can also attach a photograph **to the editing request itself**, such as `@mw-collector Please add this photo to the album as well.` Put any factual caption on a separate line. The photograph is retained while the command is excluded from narration and quotations. An optional timestamp prefix on the caption line supplies the capture date. Without one, the date is explicitly labeled as the posting date; the replay book shows a photo note rather than inventing another travel day or extending the trip dates. Completion links with `?version=N` preserve that edition. Open `http://localhost:8787/` to follow the latest updates.
+
 The book updates automatically. Read the original posts behind a chapter, inspect the collaboration feed, switch to photographs, or revisit earlier versions. On a phone, navigation moves to the bottom of the screen.
 
 **Receive the finished work without leaving Mattermost.** Publisher posts the title and version-specific web album URL directly in the same private channel, with a cover-image preview and the actual Japanese PDF attached in one post. Edits produce a new completion post and updated PDF. Switch's standard media API carries both files using the Publisher bot; no additional Mattermost credentials or PDF service are needed. See [Mattermost delivery](docs/MATTERMOST-DELIVERY.md) for details and retry commands.

@@ -71,6 +71,7 @@ def pdf_html(revision, assets):
     version = revision["version"]
     image = lambda asset_id: "https://memoryweaver.invalid/photos/" + asset_id + ".jpg"
     chapters = []
+    sources = {s["id"]: s for s in revision["sources"]}
     for chapter in album["chapters"]:
         figures = []
         for start in range(0, len(chapter["asset_ids"]), 2):
@@ -78,7 +79,9 @@ def pdf_html(revision, assets):
             figures.append('<table class="photographs"><tr>' + cells + '</tr></table>')
         paragraphs = ''.join('<p class="prose">' + escape(paragraph) + '</p>' for paragraph in chapter["body"].split("\n\n"))
         quote = '<blockquote>「' + escape(chapter["quote"]) + '」</blockquote>' if chapter["quote"] else ''
-        chapters.append(f'<section class="chapter"><div class="eyebrow">DAY {chapter["day"]:02} · {escape(chapter["date"])}</div><h2>{escape(chapter["title"])}</h2>{"".join(figures)}{paragraphs}{quote}</section>')
+        posted = all(sources[sid].get("date_basis") == "posted" for sid in chapter["source_ids"])
+        date_label = "PHOTO NOTE · POSTED" if posted else f'DAY {chapter["day"]:02}'
+        chapters.append(f'<section class="chapter"><div class="eyebrow">{date_label} · {escape(chapter["date"])}</div><h2>{escape(chapter["title"])}</h2>{"".join(figures)}{paragraphs}{quote}</section>')
     credits = []
     for asset_id in selected_assets(revision):
         item = assets[asset_id]
