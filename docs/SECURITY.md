@@ -11,7 +11,7 @@ MemoryWeaver is a **single-user, loopback-only development studio** with a priva
 - Actual images, transcripts, app versions, agent API keys, and AI auth live in local Docker volumes, never source control.
 - Switch telemetry and third-party avatar generation are disabled in this stack.
 - Browser writes require an internal bearer key unavailable to the browser. Editing and publication intent enter through Mattermost instead.
-- Uploaded images are decoded, resized, re-encoded as JPEG, and stripped of EXIF/GPS. Supported image size is 20 MB and 40 megapixels. Non-image files are not imported into the book.
+- Uploaded images are decoded, resized, re-encoded as JPEG, and stripped of raw EXIF after valid GPS is extracted into a separate private location record. Supported image size is 20 MB and 40 megapixels. Non-image files are not imported into the book.
 - Finished books and cover photographs are sent back into the same private Mattermost room automatically using Publisher's Switch media endpoint. This requested private delivery is separate from public GitHub/Cloudflare approval. PDFs include selected narration, quotations and photos; they are available to channel members and stored in local Docker volumes. Unused source posts are excluded. Rendering cannot fetch arbitrary network URLs or local files.
 - Source and model strings are escaped before HTML rendering. Preview and static exports use restrictive content security policies and `nosniff` headers.
 
@@ -29,7 +29,7 @@ All source text, captions, and natural-language edits are treated as untrusted m
 
 Typed schemas reject unexpected fields. Chapters require valid source references and photo references; a selected chapter photo must occur in its cited posts. Quotes must occur verbatim in their cited source. Codex reviews narration against the supplied evidence before a preview is committed. This does not prove every free-form sentence is true; the human reviews the result. Missing information is not a license to invent events.
 
-The source collector preserves original text and explicit capture times. It does not infer a person’s identity, a location from GPS, a relationship from a photograph, or unstated travel events. Multi-file posts are represented as source entries with attachments; upstream grouping may yield separate entries for multiple attachments. The sample uses one photo per post. Robust coalescing of upstream multi-file event batches is not yet implemented.
+The source collector preserves original text and explicit capture times. It does not infer a person’s identity, a place name or address from GPS, a relationship from a photograph, or unstated travel events. Multi-file posts are represented as source entries with attachments; upstream grouping may yield separate entries for multiple attachments. The sample uses one photo per post. Robust coalescing of upstream multi-file event batches is not yet implemented.
 
 ## Publication boundary
 

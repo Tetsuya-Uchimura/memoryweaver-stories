@@ -4,7 +4,7 @@ The private Mattermost room is both the place to request a book and the place to
 
 ## The experience
 
-1. Post travel photographs and memories in `okinawa-memories`.
+1. Post travel photographs and memories in `kyoto-travel-journal` (or another provisioned trip channel).
 2. Ask `@mw-collector 今回の沖縄旅行をアルバムにして`.
 3. Collector, Storyteller, and Editor collaborate using Switch room documents and targeted handoffs.
 4. Publisher saves the version in the local web application, renders its PDF, and sends **one top-level channel post** containing the title, a version-specific album URL, the cover JPEG, and the downloadable PDF.
@@ -27,7 +27,7 @@ Log in to [Mattermost](http://localhost:8065) as the generated traveler account 
 
 Docker installs the pinned WeasyPrint renderer, its Pango/Harfbuzz system libraries, and **Noto CJK fonts**. No host browser, printer, GUI, PDF service, font installation, extra token, or manual bot configuration is needed. A PDF render runs in a worker thread so the Switch connection keeps receiving events and heartbeats.
 
-Default preview links are `http://localhost:8787/?version=N`. If the operator has a different browser-facing preview address, set `ALBUM_BASE_URL` in the ignored `.env` and recreate services with `up`. It must be an HTTP(S) base URL without credentials or a query/fragment. Do not use the Docker-internal `http://web:8787` address in messages. The stack remains loopback-only; remote access still requires an appropriately authenticated operator-managed frontend.
+Default preview links are `http://localhost:8787/?trip=kyoto&version=N`. If the operator has a different browser-facing preview address, set `ALBUM_BASE_URL` in the ignored `.env` and recreate services with `up`. It must be an HTTP(S) base URL without credentials or a query/fragment. Do not use the Docker-internal `http://web:8787` address in messages. The stack remains loopback-only; remote access still requires an appropriately authenticated operator-managed frontend.
 
 ## Switch's standard attachment transport
 
@@ -78,3 +78,6 @@ python3 scripts/dev.py compose run --rm --no-deps -T bootstrap python -m scripts
 This uses real Mattermost and Switch in replay mode with public publishing disabled. It verifies initial delivery and two edited versions, the Publisher bot identity, top-level channel placement, title and version URL, both actual attachments, PDF bytes, changed cover bytes, and the local PDF download route. A human retry also reconciles the actual Switch attachment group without duplicate posts or regenerated books. It retains the publication-consent checks. The complete check passed in an independently initialized Docker project from a fresh GitHub clone; see [verification](VERIFICATION.md).
 
 For host-side unit tests, WeasyPrint needs Pango installed. On Apple Silicon with Homebrew libraries, use `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib .venv/bin/python -m pytest -q`. Docker includes all native libraries and Japanese fonts automatically; judges do not need this host-specific setup.
+
+
+Trips have separate revision numbers, PDF caches and outbox receipts. New completion links include the trip ID; e.g. `/api/revisions/2/pdf?trip=kyoto` downloads Kyoto edition 2. Photo locations and the trip’s supplied stops are included in the PDF. Unknown places are not guessed. Legacy unqualified completion/PDF URLs continue to resolve to retained old editions after an upgrade.

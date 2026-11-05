@@ -149,7 +149,7 @@ async def approve_and_publish(store, body, entry):
             with store.connect() as db:
                 db.execute("UPDATE approvals SET state='local-export' WHERE revision=?", (revision["version"],))
             store.set("publication", {"version": revision["version"], "state": "local-export", "url": None})
-            return f"Approved v{revision['version']}. Cloud publishing is disabled. A sanitized local export was created at /data/exports/v{revision['version']} (inside the MemoryWeaver data volume). No data was sent to GitHub or Cloudflare."
+            return f"Approved v{revision['version']}. Cloud publishing is disabled. A sanitized local export was created at {destination} (inside the MemoryWeaver data volume). No data was sent to GitHub or Cloudflare."
         url = await push_and_wait(files, revision, store)
     except Exception:
         with store.connect() as db:

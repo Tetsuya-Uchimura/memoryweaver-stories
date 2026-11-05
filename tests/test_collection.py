@@ -20,6 +20,7 @@ from app.store import Store
     ("@mw-collector この写真も追加して\n海がすごく綺麗だった。", "海がすごく綺麗だった。", "posted"),
     ("@mw-collector この写真も追加して\n[2026-10-13T10:00:00+09:00] アルバムに残したい青い海。", "アルバムに残したい青い海。", "captured"),
     ("@mw-collector Please add this photo\nWe paddled together.", "We paddled together.", "posted"),
+    ("@mw-collector Please add this photo\n[Location: Story Bridge, Brisbane | -27.463,153.035]\nWe stopped here.", "We stopped here.", "posted"),
 ])
 async def test_attached_request_reaches_evidence_and_book(tmp_path, monkeypatch, message, caption, basis):
     from app import main
@@ -63,6 +64,7 @@ async def test_attached_request_reaches_evidence_and_book(tmp_path, monkeypatch,
     assert source["id"] == entry["id"]
     assert source["text"] == caption
     assert source["date_basis"] == basis
+    if "Story Bridge" in message:assert source["location"]["name"]=="Story Bridge, Brisbane"
     assert len(source["asset_ids"]) == 1
     asset_id = source["asset_ids"][0]
     assert not store.all("assets")[0]["sample"]

@@ -92,14 +92,14 @@ async def main():
         await post("@mw-collector Change the cover to photo ID "+target)
         second = await wait_version(first["version"], lambda r: r["album"]["cover_asset_id"] == target)
         assert store.revision(first["version"])["album"]["cover_asset_id"] == first["album"]["cover_asset_id"]
-        print("PASS revision: sunset cover, prior version preserved")
+        print("PASS revision: requested cover, prior version preserved")
         await wait_for_artifacts(second)
 
         await post("@mw-collector 2日目の文章をもっと感動的にして")
         third = await wait_version(second["version"])
         assert third["album"]["chapters"][1]["body"] != second["album"]["chapters"][1]["body"]
         assert third["album"]["cover_asset_id"] == target
-        print("PASS revision: day-two prose updated, sunset cover preserved")
+        print("PASS revision: day-two prose updated, requested cover preserved")
         await wait_for_artifacts(third)
 
         await post(f"@mw-publisher PDFを再送して v{third['version']}")

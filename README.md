@@ -139,7 +139,7 @@ This creates three separate private, English-language conversations and finished
 | Paris, France | `paris-travel-journal` | 4 memories, 2 photos: Eiffel Tower / Seine and Louvre Pyramid |
 | New York, United States | `new-york-travel-journal` | 4 memories, 2 photos: Brooklyn Bridge and Central Park |
 
-Posts arrive out of order from **traveler** and **hana**. The place pins are explicitly marked as approximate fictional landmarks, not original camera GPS. The initial books are deterministic fixtures, not claimed native inference. `seed --all` does not duplicate the posts; adding `--generate` explicitly requests new replay editions. Choose a book with **Your journals** in the sidebar.
+Posts arrive out of order from **traveler** and **hana**. Before requesting a fixture book, the seed helper waits for Switch to acknowledge each post and the exact photo bytes; an incomplete handoff stops visibly instead of silently omitting a memory. The place pins are explicitly marked as approximate fictional landmarks, not original camera GPS. The initial books are deterministic fixtures, not claimed native inference. `seed --all` does not duplicate the posts; adding `--generate` explicitly requests new replay editions. Choose a book with **Your journals** in the sidebar.
 
 Now request a real native generation in the Kyoto channel:
 
@@ -269,7 +269,7 @@ Post photographs and short messages in the Mattermost room. Multiple contributor
 [2026-10-13T10:30:00+09:00] 美ら海水族館へ。ジンベエザメが想像以上に大きかった！
 ```
 
-An explicit capture date takes precedence over upload time. Without one, the upload time is used and should be reviewed. Photo GPS/EXIF is removed; the app does not infer an itinerary or identities from an image. Storyteller receives the source text and photo references; the container-CLI Codex Editor can inspect up to eight sanitized photographs for visual consistency and selection. Console-managed providers use their native Switch tools instead of that eight-image harness limit. Captions provide the factual context of what happened, who was there, and when. Without captions, an image supports neutral visual description, not invented events.
+An explicit capture date takes precedence over upload time. Without one, the upload time is used and should be reviewed. Available photo GPS is extracted into a labeled private location record before EXIF is removed from the JPEG; the app does not infer an itinerary, address or identity from an image. Storyteller receives the source text and photo references; the container-CLI Codex Editor can inspect up to eight sanitized photographs for visual consistency and selection. Console-managed providers use their native Switch tools instead of that eight-image harness limit. Captions provide the factual context of what happened, who was there, and when. Without captions, an image supports neutral visual description, not invented events.
 
 Ask in Mattermost:
 

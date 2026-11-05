@@ -135,7 +135,13 @@ def render_artifacts(store, revision):
     fingerprint = publication_digest(revision) + ":" + TEMPLATE_VERSION
     if pdf.is_file() and cover.is_file() and manifest_path.is_file():
         manifest = json.loads(manifest_path.read_text())
-        if manifest.get("fingerprint") == fingerprint and hashlib.sha256(pdf.read_bytes()).hexdigest() == manifest.get("pdf_sha256") and hashlib.sha256(cover.read_bytes()).hexdigest() == manifest.get("cover_sha256"):
+        valid_bytes = hashlib.sha256(pdf.read_bytes()).hexdigest() == manifest.get("pdf_sha256") and hashlib.sha256(cover.read_bytes()).hexdigest() == manifest.get("cover_sha256")
+        delivery = store.delivery(revision["version"]) or {}
+        receipt = delivery.get("receipt") or {}
+        delivered_bytes = receipt.get("pdf_sha256") == manifest.get("pdf_sha256") and receipt.get("cover_sha256") == manifest.get("cover_sha256") and manifest.get("cover_sha256") == revision.get("asset_hashes", {}).get(revision["album"]["cover_asset_id"])
+        # A location/template upgrade must not rewrite a PDF already received
+        # in Mattermost. Improvements belong to a newly generated edition.
+        if valid_bytes and (manifest.get("fingerprint") == fingerprint or delivered_bytes):
             return pdf, cover, manifest
     photos, assets = read_photographs(store, revision)
     from weasyprint import HTML

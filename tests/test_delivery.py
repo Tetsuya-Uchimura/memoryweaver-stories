@@ -192,3 +192,16 @@ async def test_a_rejected_concurrent_request_does_not_cancel_current_job(complet
     await worker.handle_safely({"id": "second-request", "body": "edit", "sender_kind": "user"})
     with store.connect() as db:
         assert db.execute("SELECT state FROM jobs WHERE id=?", (current["id"],)).fetchone()[0] == "working"
+
+
+def test_delivered_edition_keeps_its_pdf_when_location_template_changes(completed,monkeypatch):
+    from agents import artifacts
+    store,revision=completed
+    pdf,cover,manifest=render_artifacts(store,revision)
+    original_pdf,original_cover=pdf.read_bytes(),cover.read_bytes()
+    store.delivery_update(revision['version'],'sent',1,receipt=manifest)
+    monkeypatch.setattr(artifacts,'TEMPLATE_VERSION','future-location-template')
+    upgraded={**revision,'trip_id':'preserved-legacy-room'}
+    got_pdf,got_cover,got_manifest=render_artifacts(store,upgraded)
+    assert got_pdf.read_bytes()==original_pdf and got_cover.read_bytes()==original_cover
+    assert got_manifest==manifest

@@ -11,6 +11,7 @@ import time
 import httpx
 from app.models import Album, Source, validate_evidence
 from app.store import Store
+from app.locations import ANNOTATION, parse_location
 from agents.switch import Switch
 from agents.models import harness, replay
 
@@ -57,7 +58,7 @@ class Worker:
                     continue
                 # A request and its photographs are independent inputs. Keep
                 # caption lines, but never quote an editing instruction as a memory.
-                body = "\n".join(line for line in body.splitlines() if STAMP.match(line) or not instruction_text(line)).strip()
+                body = "\n".join(line for line in body.splitlines() if STAMP.match(line) or ANNOTATION.fullmatch(line) or not instruction_text(line)).strip()
                 match = STAMP.match(body)
             if not body.strip() and not entry.get("attachments"):
                 continue
@@ -81,7 +82,6 @@ class Worker:
                             response = await http.post(os.getenv("WEB_URL", "http://localhost:8787") + "/internal/media", headers={"Authorization": "Bearer " + os.environ["WEB_INTERNAL_TOKEN"]}, files={"file": ("photo.jpg", data, "image/jpeg")}, params={"trip":self.trip_id} if getattr(self,"trip_id",None) else {})
                             response.raise_for_status()
                             asset_ids.append(response.json()["id"])
-            from app.locations import parse_location
             body,location = parse_location(body)
             source = Source(location=location,id=entry["id"], author=entry["sender_name"], text=body, captured_at=timestamp, date_basis="captured" if match else "posted", asset_ids=asset_ids)
             self.store.put("sources", source.model_dump())
