@@ -5,13 +5,13 @@ The private Mattermost room is both the place to request a book and the place to
 ## The experience
 
 1. Post travel photographs and memories in `kyoto-travel-journal` (or another provisioned trip channel).
-2. Ask `@mw-collector 今回の沖縄旅行をアルバムにして`.
+2. Ask `@mw-collector Create an English travel journal from this room.`.
 3. Collector, Storyteller, and Editor collaborate using Switch room documents and targeted handoffs.
 4. Publisher saves the version in the local web application, renders its PDF, and sends **one top-level channel post** containing the title, a version-specific album URL, the cover JPEG, and the downloadable PDF.
-5. Ask for an edit in the same channel, for example `@mw-collector 表紙を夕日の写真に変更して`.
+5. Ask for an edit in the same channel, for example `@mw-collector Use the sunset photograph as the cover.`.
 6. Receive a new completion post, cover, and PDF for the updated version. Previous posts still open their original versions.
 
-The cover appears using Mattermost's native image attachment preview. The PDF is a real file attachment, not merely a URL or a browser print instruction. PDF layout includes a full-page photographic cover, Japanese narration and quotations, chapter photography, page numbers, and photo credits/licenses. Its edition label distinguishes replay rendering from live AI writing.
+The cover appears using Mattermost's native image attachment preview. The PDF is a real file attachment, not merely a URL or a browser print instruction. PDF layout includes a full-page photographic cover, English narration and quotations, chapter photography, page numbers, and photo credits/licenses. Its edition label distinguishes replay rendering from live AI writing.
 
 ## Run from a fresh clone
 
@@ -60,7 +60,7 @@ The preview version and its pending delivery are committed in the same SQLite tr
 To check/retry a failed delivery in Mattermost:
 
 ```text
-@mw-publisher PDFを再送して v3
+@mw-publisher resend PDF v3
 ```
 
 Use the actual version, or omit it for the latest version. An already accepted complete attachment group is recognized through the Publisher's authoritative Switch history, avoiding a duplicate completion post. A copied caption from a human does not count as a receipt. This is a check-and-retry command, not an instruction to duplicate a file that is already present in the channel.

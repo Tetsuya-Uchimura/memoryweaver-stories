@@ -39,7 +39,7 @@ def bind(values, storyteller, editor):
     request(opener, base + "/gateway/auth/login", {"email": values["GATEWAY_ADMIN_EMAIL"], "password": values["GATEWAY_ADMIN_PASSWORD"]})
     try:
         catalog=request(opener,web+"/api/trips")
-        room_name=next((t["channel"] for t in catalog["trips"] if t["id"]==catalog["default"]),"okinawa-memories")
+        room_name=next((t["channel"] for t in catalog["trips"] if t["id"]==catalog["default"]),"kyoto-travel-journal")
         agents = request(opener, base + "/gateway/agents")
         result = {}
         for role, name in [("storyteller", storyteller), ("editor", editor)]:

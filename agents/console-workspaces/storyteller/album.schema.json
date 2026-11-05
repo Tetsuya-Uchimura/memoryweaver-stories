@@ -73,7 +73,8 @@
             "classic",
             "quiet",
             "editorial",
-            "urban"
+            "urban",
+            "coastal"
           ],
           "type": "string"
         },

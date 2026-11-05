@@ -4,6 +4,12 @@ from pathlib import Path
 from PIL import Image,ImageOps
 
 FILES=[
+ ('santorini-oia','Blue Domed Church - Oia, Santorini, Greece - 20 July 2008.jpg','George M. Groutas','CC BY 2.0','by/2.0'),
+ ('santorini-harbour','Santorini, Oia 01.jpg','LBM1948','CC BY-SA 4.0','by-sa/4.0'),
+ ('santorini-caldera','Views of the caldera from Fira, 226497.jpg','Zde','CC BY-SA 4.0','by-sa/4.0'),
+ ('santorini-beach','Perissa Beach and Mésa Vounó at sunset, May 2024.jpg','PCN02WPS','CC BY-SA 4.0','by-sa/4.0'),
+ ('santorini-red-beach','Red Beach in Santorini.jpg','Anthony Baratier','CC BY-SA 4.0','by-sa/4.0'),
+ ('santorini-sunset','Santorini Sunset.jpg','SofiaGMussolin','CC BY-SA 4.0','by-sa/4.0'),
  ('kyoto-river','Togetsu-kyō bridge at golden hour, Kyoto, Japan.jpg','Basile Morin','CC BY-SA 4.0','by-sa/4.0'),
  ('kyoto-gion','A view of Gion corner in Geisha district, Kyoto, Japan.jpg','Joli Rumi','CC BY-SA 4.0','by-sa/4.0'),
  ('kyoto-hall','JAP Kyoto Kiyomizu-dera.jpg','Grueslayer @Wikipedia','CC BY-SA 4.0','by-sa/4.0'),

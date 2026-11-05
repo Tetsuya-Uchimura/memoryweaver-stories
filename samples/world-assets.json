@@ -1,5 +1,59 @@
 [
   {
+    "id": "santorini-oia",
+    "url": "/static/assets/santorini-oia.jpg",
+    "label": "Blue Domed Church - Oia, Santorini, Greece - 20 July 2008.jpg",
+    "sample": true,
+    "credit": "George M. Groutas · CC BY 2.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Blue%20Domed%20Church%20-%20Oia%2C%20Santorini%2C%20Greece%20-%2020%20July%202008.jpg",
+    "license_url": "https://creativecommons.org/licenses/by/2.0/"
+  },
+  {
+    "id": "santorini-harbour",
+    "url": "/static/assets/santorini-harbour.jpg",
+    "label": "Santorini, Oia 01.jpg",
+    "sample": true,
+    "credit": "LBM1948 · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Santorini%2C%20Oia%2001.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "santorini-caldera",
+    "url": "/static/assets/santorini-caldera.jpg",
+    "label": "Views of the caldera from Fira, 226497.jpg",
+    "sample": true,
+    "credit": "Zde · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Views%20of%20the%20caldera%20from%20Fira%2C%20226497.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "santorini-beach",
+    "url": "/static/assets/santorini-beach.jpg",
+    "label": "Perissa Beach and Mésa Vounó at sunset, May 2024.jpg",
+    "sample": true,
+    "credit": "PCN02WPS · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Perissa%20Beach%20and%20M%C3%A9sa%20Voun%C3%B3%20at%20sunset%2C%20May%202024.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "santorini-red-beach",
+    "url": "/static/assets/santorini-red-beach.jpg",
+    "label": "Red Beach in Santorini.jpg",
+    "sample": true,
+    "credit": "Anthony Baratier · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Red%20Beach%20in%20Santorini.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "santorini-sunset",
+    "url": "/static/assets/santorini-sunset.jpg",
+    "label": "Santorini Sunset.jpg",
+    "sample": true,
+    "credit": "SofiaGMussolin · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Santorini%20Sunset.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
     "id": "kyoto-river",
     "url": "/static/assets/kyoto-river.jpg",
     "label": "Togetsu-kyō bridge at golden hour, Kyoto, Japan.jpg",

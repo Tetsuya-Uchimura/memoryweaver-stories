@@ -81,7 +81,7 @@ class Store:
             from app.locations import snapshot_locations
             cited={sid for chapter in album["chapters"] for sid in chapter["source_ids"]}
             places,photo_locations=snapshot_locations([s for s in sources if s["id"] in cited],known,asset_ids)
-            data = dict(album=album, mode=mode, sources=sources, asset_hashes=hashes, places=places, photo_locations=photo_locations, language=self.get("trip",{}).get("language","ja"))
+            data = dict(album=album, mode=mode, sources=sources, asset_hashes=hashes, places=places, photo_locations=photo_locations, language=self.get("trip",{}).get("language","en"))
             cur = db.execute("INSERT INTO revisions(data,job_id,created) VALUES (?,?,?)", (json.dumps(data, ensure_ascii=False), job_id, time.time()))
             db.execute("UPDATE jobs SET state='complete' WHERE id=?", (job_id,))
             # The preview and its delivery intent are committed atomically.

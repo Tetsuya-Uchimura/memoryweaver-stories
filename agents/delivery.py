@@ -12,11 +12,9 @@ def completion_caption(revision):
     version = revision["version"]
     # User/model-authored titles cannot create Mattermost mentions or links.
     title = revision["album"]["title"].translate(str.maketrans({"@": "＠", "[": "［", "]": "］", "*": "＊", "`": "｀", "\n": " ", "\r": " "}))
-    if revision.get("language")=="en":
-        heading="Your travel journal is ready" if version==1 else "Your travel journal has been updated"
-        return f"### {heading} 📖\n\n**{title}**\n\nWeb album: {album_url(version,revision.get('trip_id'))}\n\nThe cover preview and this edition’s PDF are attached. Visit stops and photo locations are included when supplied; sample pins are approximate fictional landmarks.\nAsk @mw-collector for changes in this channel.\n\nPrivate local edition. Public publication requires separate exact-version human approval:\n`{approval_command(revision)}`\n\nMemoryWeaver · v{version} · {revision['mode'].upper()}"
-    heading = "旅行記が完成しました" if version == 1 else "旅行記を更新しました"
-    return f"### {heading} 📖\n\n**{title}**\n\nWebアルバム：{album_url(version,revision.get("trip_id"))}\n\n表紙のプレビューと、この版の旅行記PDFを添付しました。\nこのチャンネルで修正を依頼できます：`@mw-collector 表紙を夕日の写真に変更して`\n\nローカルの非公開版です。クラウド公開は別途承認が必要です。\n公開を希望する場合は、内容を確認したうえで次の承認を送信してください：\n`{approval_command(revision)}`\n\nMemoryWeaver · v{version} · {revision['mode'].upper()}"
+    heading="Your travel journal is ready" if version==1 else "Your travel journal has been updated"
+    return f"### {heading} 📖\n\n**{title}**\n\nWeb album: {album_url(version,revision.get('trip_id'))}\n\nThe cover preview and this edition’s PDF are attached. Visit stops and photo locations are included when supplied; sample pins are approximate fictional landmarks.\nAsk @mw-collector for changes in this channel.\n\nPrivate local edition. Public publication requires separate exact-version human approval:\n`{approval_command(revision)}`\n\nMemoryWeaver · v{version} · {revision['mode'].upper()}"
+
 
 
 class DeliveryManager:
@@ -67,7 +65,7 @@ class DeliveryManager:
                 if attempt == 1:
                     # The book is already saved; report an attachment failure separately.
                     try:
-                        await self.client.say(f"旅行記 v{version} は保存済みです：{album_url(version,revision.get("trip_id"))}\nPDF・表紙の送信を再試行します。届かない場合は `@mw-publisher PDFを再送して v{version}` と依頼してください。")
+                        await self.client.say(f"Your journal v{version} has been saved: {album_url(version,revision.get("trip_id"))}\nRetrying cover and PDF delivery. If they do not arrive, send `@mw-publisher resend PDF v{version}`.")
                     except Exception:
                         pass
 

@@ -43,7 +43,7 @@ Use your own authenticated **Claude Code** and **Codex** providers on your compu
    @mw-collector Create an English travel journal of our Kyoto trip. Keep every source, photograph and supplied location. Do not publish.
    ```
 
-8. Receive Publisher's title, version URL, cover image and PDF in the same channel. Open `http://localhost:8787/` to follow the latest edition. Ask `@mw-collector 表紙を竹林の写真に変更して` and receive a new version and PDF. No production publishing occurs.
+8. Receive Publisher's title, version URL, cover image and PDF in the same channel. Open `http://localhost:8787/` to follow the latest edition. Ask `@mw-collector Use the bamboo grove photograph as the cover.` and receive a new version and PDF. No production publishing occurs.
 
 ## What actually collaborates
 
@@ -55,11 +55,11 @@ A saved native edition displays **LIVE AI**; a saved fixture keeps **REPLAY DEMO
 
 ## Practical limits and recovery
 
-The provisioned Kyoto, Paris and New York rooms each have a separate book database, sources, assets, revisions and PDF queue. Upgrades also retain the old Okinawa room/book without relabeling it. Use the trip selector or `?trip=kyoto`; versions are scoped to the selected trip. Arbitrary extra rooms do not automatically become books: the preconfigured trip catalog defines supported rooms. There is no application photo-count cutoff during collection; per-file sanitization and Switch size limits still apply. Console models choose their own photo inspection tools; this mode does not call the Docker Codex harness with its eight-image limit. This is not a guarantee that every photo was visually examined.
+The provisioned Kyoto, Paris, New York and Santorini rooms each have a separate book database, sources, assets, revisions and PDF queue. Upgrades retire the obsolete pre-showcase room and archive its private data locally outside the web app. Use the trip selector or `?trip=kyoto`; versions are scoped to the selected trip. Arbitrary extra rooms do not automatically become books: the preconfigured trip catalog defines supported rooms. There is no application photo-count cutoff during collection; per-file sanitization and Switch size limits still apply. Console models choose their own photo inspection tools; this mode does not call the Docker Codex harness with its eight-image limit. This is not a guarantee that every photo was visually examined.
 
-Keep the prepared role guides in the selected directories. Pending model permissions, provider sign-out, unsupported models and Console shutdown are visible in Console/Mattermost; we never claim the preview changed before Publisher succeeds. An abandoned job expires when the next request arrives after 15 minutes. Ask a fresh Collector request after fixing the session. Publisher retries artifact delivery and can resend a saved version with `@mw-publisher PDFを再送して vN`. Exact-version public consent remains a separate operation.
+Keep the prepared role guides in the selected directories. Pending model permissions, provider sign-out, unsupported models and Console shutdown are visible in Console/Mattermost; we never claim the preview changed before Publisher succeeds. An abandoned job expires when the next request arrives after 15 minutes. Ask a fresh Collector request after fixing the session. Publisher retries artifact delivery and can resend a saved version with `@mw-publisher resend PDF vN`. Exact-version public consent remains a separate operation.
 
-A fresh clone defaults to the Kyoto book and can generate all three replay fixtures without model accounts. The original container-CLI live mode is also supported when no Console binding exists. The replay smoke script refuses Console-bound data; use a separate fresh Docker project for replay checks. To inspect locally saved role bindings, use `/api/state`'s `runtime` and role names; credentials are never returned.
+A fresh clone defaults to the Kyoto book and can generate all four replay fixtures without model accounts. The original container-CLI live mode is also supported when no Console binding exists. The replay smoke script refuses Console-bound data; use a separate fresh Docker project for replay checks. To inspect locally saved role bindings, use `/api/state`'s `runtime` and role names; credentials are never returned.
 
 ## Verify a live run
 

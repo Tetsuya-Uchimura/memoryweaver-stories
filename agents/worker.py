@@ -16,8 +16,8 @@ from agents.switch import Switch
 from agents.models import harness, replay
 
 ROLES = ["collector", "storyteller", "editor", "publisher"]
-GENERATION = re.compile(r"アルバム|旅行記|\b(?:albums?|travelogue|generate|story|storybook)\b", re.I)
-EDIT = re.compile(r"変更|反映|追加|感動|修正|もっと|表紙|\b(?:cover|revise|edit|emotional|include|add)\b", re.I)
+GENERATION = re.compile(r"\u30a2\u30eb\u30d0\u30e0|\u65c5\u884c\u8a18|\b(?:albums?|journals?|travelogue|generate|story|storybook)\b", re.I)
+EDIT = re.compile(r"\u5909\u66f4|\u53cd\u6620|\u8ffd\u52a0|\u611f\u52d5|\u4fee\u6b63|\u3082\u3063\u3068|\u8868\u7d19|\b(?:cover|revise|edit|emotional|include|add)\b", re.I)
 STAMP = re.compile(r"^\[(\d{4}-\d{2}-\d{2}T[^\]]+)\]\s*")
 
 
@@ -109,7 +109,7 @@ class Worker:
         self.store.set("console",console)
         self.store.set("job-mode:"+job["id"],mode)
         trip=self.store.get("trip",{})
-        payload = dict(job=job, sources=sources, assets=self.store.all("assets"), previous=self.store.revision(), mode=mode, language=trip.get("language","ja"), destination=trip.get("destination"), trip_id=trip.get("id"), trip_title=trip.get("title"), trip_subtitle=trip.get("subtitle"))
+        payload = dict(job=job, sources=sources, assets=self.store.all("assets"), previous=self.store.revision(), mode=mode, language=trip.get("language","en"), destination=trip.get("destination"), trip_id=trip.get("id"), trip_title=trip.get("title"), trip_subtitle=trip.get("subtitle"))
         document_id = await self.client.document("evidence-" + hashlib.sha256(job["id"].encode()).hexdigest()[:12], payload)
         await self.report(f"Collected {len(sources)} source posts from {len(set(s['author'] for s in sources))} contributors. Evidence is shared in the Switch room document.", thread)
         if console and mode=="live":
@@ -143,13 +143,13 @@ class Worker:
             else:
                 message = await approve_and_publish(self.store, body, entry)
                 await self.report(message, thread, "publication")
-        elif self.role == "publisher" and human and "@mw-publisher" in body and re.search(r"再送|送り直|resend|retry", body, re.I):
+        elif self.role == "publisher" and human and "@mw-publisher" in body and re.search(r"\u518d\u9001|\u9001\u308a\u76f4|resend|retry", body, re.I):
             requested = re.search(r"\bv(\d+)\b", body, re.I)
             current = self.store.revision(int(requested[1])) if requested else self.store.revision()
             if not current:
-                raise ValueError("先に旅行記を作成してください。指定された版が見つかりません。")
+                raise ValueError("Create a travel journal first. The requested edition could not be found.")
             self.store.queue_delivery(current["version"])
-            await self.report(f"旅行記 v{current['version']} の添付を確認し、未送信なら再送します。", thread)
+            await self.report(f"Checking the attachments for journal v{current['version']} and resending them if needed.", thread)
         if self.role == "publisher" and not human and self.store.get("console"):
             from agents.console import receive
             if await receive(self, entry):

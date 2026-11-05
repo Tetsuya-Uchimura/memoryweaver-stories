@@ -13,6 +13,13 @@ import urllib.parse
 import httpx
 
 CONSENT = "I CONSENT TO PUBLIC PHOTOS AND TEXT"
+MAP_FILES = (
+    "journey-map.js", "journey-map.css", "vendor/leaflet/leaflet.js",
+    "vendor/leaflet/leaflet.css", "vendor/leaflet/LICENSE",
+    "vendor/leaflet/images/layers.png", "vendor/leaflet/images/layers-2x.png",
+    "vendor/leaflet/images/marker-icon.png", "vendor/leaflet/images/marker-icon-2x.png",
+    "vendor/leaflet/images/marker-shadow.png",
+)
 
 
 def public_book(revision):
@@ -43,6 +50,7 @@ def build_export(store, revision, approval):
     ids = selected_assets(revision)
     book = public_book(revision)
     files = {"book-designs.css": (static / "book-designs.css").read_bytes(), "style.css": (static / "style.css").read_bytes(), "book.json": canonical(book)}
+    files.update({name: (static / name).read_bytes() for name in MAP_FILES})
     for asset_id in ids:
         asset = assets[asset_id]
         if asset.get("sample"):
@@ -62,20 +70,35 @@ def build_export(store, revision, approval):
     e = html.escape
     image = lambda aid: "assets/" + aid + ".jpg"
     from app.locations import map_url
+    def place_key(p):
+        return (p["name"], p.get("latitude"), p.get("longitude"), p["basis"])
+    locations = list({place_key(p): p for p in [*book.get("places", []), *book.get("photo_locations", {}).values()]}.values())
+    def map_button(p):
+        if p.get("latitude") is None:
+            return ""
+        index = next(i for i, place in enumerate(locations) if place_key(place) == place_key(p))
+        return f'<button type="button" class="show-on-map" data-show-map="{index}">Show on this map</button>'
     def photo_place(aid):
         p=book.get("photo_locations",{}).get(aid)
-        return "<br>Location not supplied" if not p else "<br>Location: "+e(p["name"])+" · "+e(p["basis"])+' · <a href="'+e(map_url(p))+'">Open map</a>'
+        return "<br>Location not supplied" if not p else "<br>Location: "+e(p["name"])+" · "+e(p["basis"])+map_button(p)+' · <a href="'+e(map_url(p))+'">Open map</a>'
     chapters = []
     for c in book["chapters"]:
         photos = ''.join(f'<figure><img src="{image(aid)}" alt="{e(assets[aid]["label"])}"><figcaption>{e(assets[aid]["credit"])}{photo_place(aid)}</figcaption></figure>' for aid in c["asset_ids"])
-        chapters.append(f'<section class="chapter"><div class="chapter-heading"><span class="chapter-number">{c["day"]:02}</span><div><div class="chapter-date">{e(c["date"])}</div><h2>{e(c["title"])}</h2></div></div><div class="chapter-layout"><div class="chapter-images">{photos}</div><div class="chapter-prose"><p>{e(c["body"])}</p><blockquote>「{e(c["quote"])}」</blockquote></div></div></section>')
+        chapters.append(f'<section class="chapter"><div class="chapter-heading"><span class="chapter-number">{c["day"]:02}</span><div><div class="chapter-date">{e(c["date"])}</div><h2>{e(c["title"])}</h2></div></div><div class="chapter-layout"><div class="chapter-images">{photos}</div><div class="chapter-prose"><p>{e(c["body"])}</p><blockquote>“{e(c["quote"])}”</blockquote></div></div></section>')
     credits = ''.join(f'<p>{e(assets[aid]["label"])} · {e(assets[aid]["credit"])}' + (f' · <a href="{e(assets[aid]["source_url"])}">Original</a> · <a href="{e(assets[aid]["license_url"])}">License</a>' if assets[aid].get("sample") else '') + '</p>' for aid in ids)
     places=""
-    if book.get('places'):
-        places='<section class="journey-places"><h2>Places we remember</h2>'+''.join('<p><a href="'+e(map_url(p))+'">'+e(p['name'])+'</a> · '+e(p['basis'])+'</p>' for p in book['places'])+'</section>'
-    doc = f'''<!doctype html><html lang="{e(revision.get("language","ja"))}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>{e(book["title"])} · MemoryWeaver</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="book-designs.css"></head><body class="reading"><main><article class="book" data-design="{design}"><section class="cover"><img src="{image(book["cover_asset_id"])}" alt="Travel journal cover"><div class="cover-top">A MEMORYWEAVER TRAVEL JOURNAL · V{revision["version"]}</div><div class="cover-content"><div class="cover-location">{e(book["location"])}</div><h1 class="cover-title">{e(book["title"])}</h1><div class="cover-subtitle">{e(book["subtitle"])}</div><div class="cover-bottom">{e(book["date_label"])}</div></div></section>{places}{''.join(chapters)}<div class="book-end"><span class="weave">✳</span><p>Some journeys stay with us.</p><small>WOVEN TOGETHER WITH MEMORYWEAVER · {e(revision["mode"].upper())}</small></div></article><footer class="photo-credit">{credits}<p>Sample photographs illustrate a fictional trip. Published with explicit human approval.</p></footer></main></body></html>'''
+    if locations:
+        stops = [{"name": p["name"], "latitude": p.get("latitude"), "longitude": p.get("longitude"), "basis": p["basis"],
+                  "photos": [{"url": image(aid), "label": assets[aid]["label"]} for aid in ids
+                             if aid in book.get("photo_locations", {}) and place_key(book["photo_locations"][aid]) == place_key(p)]} for p in locations]
+        widget = '<div class="journey-map" data-journey-map data-map-stops="' + e(json.dumps(stops, ensure_ascii=False), quote=True) + '"></div>'
+        cards = ''.join(f'<article class="place-card" id="place-{i}"><span class="place-number">{i+1:02}</span><div><h3>{e(p["name"])}</h3><p>{e(p["basis"])}</p>'
+                        + (f'<small>{p["latitude"]:.5f}, {p["longitude"]:.5f}</small>' if p.get("latitude") is not None else '')
+                        + '</div>'+map_button(p)+'<a href="'+e(map_url(p))+'" target="_blank" rel="noopener noreferrer">Open map ↗</a></article>' for i,p in enumerate(locations))
+        places='<section class="journey-places"><h2>Places we remember</h2>'+widget+'<div class="place-list">'+cards+'</div></section>'
+    doc = f'''<!doctype html><html lang="{e(revision.get("language","ja"))}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>{e(book["title"])} · MemoryWeaver</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="book-designs.css"><link rel="stylesheet" href="vendor/leaflet/leaflet.css"><link rel="stylesheet" href="journey-map.css"><script src="vendor/leaflet/leaflet.js" defer></script><script src="journey-map.js" defer></script></head><body class="reading"><main><article class="book" data-design="{design}"><section class="cover"><img src="{image(book["cover_asset_id"])}" alt="Travel journal cover"><div class="cover-top">A MEMORYWEAVER TRAVEL JOURNAL · V{revision["version"]}</div><div class="cover-content"><div class="cover-location">{e(book["location"])}</div><h1 class="cover-title">{e(book["title"])}</h1><div class="cover-subtitle">{e(book["subtitle"])}</div><div class="cover-bottom">{e(book["date_label"])}</div></div></section>{places}{''.join(chapters)}<div class="book-end"><span class="weave">✳</span><p>Some journeys stay with us.</p><small>WOVEN TOGETHER WITH MEMORYWEAVER · {e(revision["mode"].upper())}</small></div></article><footer class="photo-credit">{credits}<p>Sample photographs illustrate a fictional trip. Published with explicit human approval.</p></footer></main></body></html>'''
     files["index.html"] = doc.encode()
-    files["_headers"] = b"/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: no-referrer\n  Content-Security-Policy: default-src 'none'; img-src 'self'; style-src 'self'; base-uri 'none'; frame-ancestors 'none'\n"
+    files["_headers"] = b"/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: no-referrer\n  Content-Security-Policy: default-src 'none'; img-src 'self' data: https://tile.openstreetmap.org; style-src 'self'; script-src 'self'; base-uri 'none'; frame-ancestors 'none'\n"
     manifest = {"schema": 1, "version": revision["version"], "digest": publication_digest(revision), "asset_ids": ids, "asset_hashes": revision["asset_hashes"], "book": book, "consent": CONSENT, "approved_at": approval["created"], "approver_hash": hashlib.sha256(approval["user_id"].encode()).hexdigest(), "files": {p: hashlib.sha256(b).hexdigest() for p, b in files.items()}}
     files["release.json"] = canonical(manifest)
     destination = store.root / "exports" / ("v" + str(revision["version"]))

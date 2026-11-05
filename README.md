@@ -15,7 +15,7 @@ This is the workflow exercised during development: **Mattermost → Switch → C
 ### Prerequisites and tested versions
 
 - Docker Desktop, or Docker Engine with Compose v2, running before setup. Allow roughly 8 GB RAM and several GB of disk for the initial build.
-- Git and Python **3.9+** on the host. The setup helpers use Python's standard library; judges do not need a virtual environment, host PDF libraries, or host Japanese fonts.
+- Git and Python **3.9+** on the host. The setup helpers use Python's standard library; judges do not need a virtual environment, host PDF libraries, or host font installation.
 - [Official Switch Console](https://github.com/sandbox-quantum/switch/releases/tag/switch-console-v0.40.1). The tested desktop release is **0.40.1** on **macOS / Apple Silicon**. Install the release for your platform; on macOS, open its DMG, copy Switch Console to Applications, and launch it.
 - Your own Claude Code and Codex accounts with access to a supported model. Complete each provider's sign-in on **This computer** in Console. If a CLI is missing, complete Console's provider setup/install flow first. The providers may require a subscription, browser verification, or consent.
 - Internet access for initial downloads and live model calls. Local ports **8000** (Switch), **8065** (Mattermost), **8787** (book), and **55432** (PostgreSQL) must be available. Stop conflicting services before using these default-address instructions.
@@ -95,7 +95,7 @@ Under **MemoryWeaver Docker → Your Agents → +**, add the following **two sep
 | --- | --- | --- |
 | Name | `mw-storyteller-claude` | `mw-editor-codex` |
 | Description | `Writes evidence-based travel stories for MemoryWeaver.` | `Reviews MemoryWeaver drafts against source memories and photographs.` |
-| Agent instructions | `Follow CLAUDE.md and album.schema.json in your working directory. Handle MW_CONSOLE through Switch. Write in Japanese unless requested otherwise. Never publish or approve publication.` | `Follow AGENTS.md and editorial.schema.json in your working directory. Handle MW_DRAFT through Switch. Verify facts, dates, citations, photos and verbatim quotes. Never publish or claim a web/PDF update without Publisher confirmation.` |
+| Agent instructions | `Follow CLAUDE.md and album.schema.json in your working directory. Handle MW_CONSOLE through Switch. Write in English. Never publish or approve publication.` | `Follow AGENTS.md and editorial.schema.json in your working directory. Handle MW_DRAFT through Switch. Verify facts, dates, citations, photos and verbatim quotes. Never publish or claim a web/PDF update without Publisher confirmation.` |
 | Run location | **This computer** | **This computer** |
 | Directory | Printed absolute `storyteller` path from step 4 | Printed absolute `editor` path from step 4 |
 | Agent provider | **Claude Code** | **Codex** |
@@ -131,13 +131,14 @@ For this Console workflow, **do not change `AI_MODE` to `live` and do not run `d
 python3 scripts/dev.py seed --all --generate
 ```
 
-This creates three separate private, English-language conversations and finished **REPLAY DEMO** books through Switch:
+This creates four separate private, English-language conversations and finished **REPLAY DEMO** books through Switch:
 
 | Journal | Mattermost channel | Fictional sample |
 | --- | --- | --- |
 | Kyoto, Japan (default) | `kyoto-travel-journal` | 9 memories, 6 photos: Fushimi Inari, Gion, Arashiyama bamboo / river, two Kiyomizu-dera views |
 | Paris, France | `paris-travel-journal` | 8 memories, 6 photos: Eiffel Tower / Seine, Pont Alexandre III, Montmartre, Louvre, Tuileries, Notre-Dame |
 | New York, United States | `new-york-travel-journal` | 8 memories, 6 photos: Brooklyn Bridge, DUMBO, Times Square, Central Park, Bethesda Terrace, Grand Central |
+| Santorini, Greece | `santorini-travel-journal` | 9 memories, 6 photos: Oia, Ammoudi Bay, Fira caldera, Perissa Beach, Red Beach and sunset |
 
 Posts arrive out of order from **traveler** and **hana**. Before requesting a fixture book, the seed helper waits for Switch to acknowledge each post and the exact photo bytes; an incomplete handoff stops visibly instead of silently omitting a memory. The place pins are explicitly marked as approximate fictional landmarks, not original camera GPS. The initial books are deterministic fixtures, not claimed native inference. `seed --all` does not duplicate the posts; adding `--generate` explicitly requests new replay editions. Choose a book with **Your journals** in the sidebar.
 
@@ -161,7 +162,7 @@ Publisher posts directly to the same Mattermost channel with:
 - A cover-preview image and the actual downloadable PDF, attached together.
 - A **LIVE** edition marker. No public deployment is needed.
 
-Open the link, scroll through the book, inspect a chapter's original-source citations, and open the PDF. In a fresh sample environment, check that the six source posts and three photos were retained. An upgraded developer installation retains the old Okinawa book separately; a fresh judge clone contains only the new fictional world-trip fixtures, without the developer’s private uploads.
+Open the link, scroll through the book, inspect a chapter's original-source citations, and open the PDF. In a fresh sample environment, check that all nine source posts and six photographs were retained. An upgraded installation retires its obsolete pre-showcase book; a fresh judge clone contains only the four English fictional fixtures, without the developer’s private uploads.
 
 Next, ask for a cover edit:
 
@@ -203,7 +204,7 @@ Volumes retain the book, local accounts and native role binding. Reopen Console,
 | Requests stop after closing Console | Reopen Console and restore its provider sessions. Docker tool agents remain running, but cannot replace the native models. |
 | A failed/abandoned generation blocks a new request | Fix the provider/session first. A working job older than 15 minutes expires when the next Collector request arrives. |
 | Book unchanged after an edit | Check Publisher's completion/error post. Use the latest root URL rather than an older pinned completion URL. |
-| Book exists but attachment delivery failed | Send `@mw-publisher PDFを再送して vN`, replacing `N` with your saved version. This retries delivery without regenerating the book. |
+| Book exists but attachment delivery failed | Send `@mw-publisher resend PDF vN`, replacing `N` with your saved version. This retries delivery without regenerating the book. |
 
 For service diagnostics, use `python3 scripts/dev.py status` and `python3 scripts/dev.py logs collector publisher`. Native model activity is in **Switch Console and the Mattermost thread**, not Docker's idle writer/reviewer logs. [Detailed protocol and recovery notes](docs/CONSOLE.md) explain the handoffs.
 
@@ -237,7 +238,7 @@ Change `AI_MODE=replay` to `AI_MODE=live` in your generated `.env`, then run:
 
 ```sh
 python3 scripts/dev.py up
-python3 scripts/dev.py seed --message '@mw-collector 今回の京都旅行をアルバムにして'
+python3 scripts/dev.py seed --message '@mw-collector Create an English travel journal of our Kyoto trip.'
 ```
 
 In live mode, Storyteller calls **Claude Code** with a structured album schema; Editor calls **Codex** with a separate structured editorial review. Collector and Publisher are deterministic tool agents. Optional `CLAUDE_MODEL` and `CODEX_MODEL` settings let you select models your accounts can access; otherwise the authenticated CLIs choose their defaults. Live results are never silently replaced by replay output.
@@ -248,15 +249,16 @@ The container-CLI option uses custom Switch workers. Switch Console is optional 
 
 ![Kyoto quiet journal, Paris editorial magazine and New York urban book designs](docs/screenshots/designs.jpg)
 
-Each starter book includes **six distinct licensed photographs**, supplied by real sample Mattermost posts, with captions and approximate fictional locations. Six is the fixture size, **not an application photo limit**. Additional user uploads follow the same Collector → Switch documents → Storyteller → Editor → Publisher path.
+Each of the four starter books includes **six distinct licensed photographs**, supplied by real sample Mattermost posts, with captions and approximate fictional locations. Six is the fixture size, **not an application photo limit**. Additional user uploads follow the same Collector → Switch documents → Storyteller → Editor → Publisher path.
 
 | Journey | Art direction | Web layout |
 | --- | --- | --- |
 | Kyoto | `quiet` · paper, ink and vermilion | Split cover, generous margins, staggered photo pairs and reflective prose |
 | Paris | `editorial` · ivory and burgundy | Magazine masthead, inset cover image and photo essays |
 | New York | `urban` · charcoal, cobalt and taxi yellow | Bold sans-serif cover, contact-sheet image grid and large chapter numbers |
+| Santorini | `coastal` · sea blue and bright paper | Wide sea-view cover, blue typography and airy seaside photo spreads |
 
-Storyteller can choose `album.design` from these recipes or the neutral `classic` recipe; Editor reviews it with the draft through Switch. If a client omits it, Publisher selects a recipe from the supplied destination and cited place names. It never accepts arbitrary model HTML, CSS, scripts or remote fonts. Recipes change presentation, not factual memories. The chosen recipe is saved in the edition and included in the exact-version publication digest. The PDF and sanitized static export use that same recipe. Earlier editions without a recipe retain the classic layout; already delivered PDF bytes are preserved.
+Storyteller can choose `album.design` from five recipes (`quiet`, `editorial`, `urban`, `coastal`, `classic`); Editor reviews it with the draft through Switch. If a client omits it, Publisher selects a recipe from the supplied destination and cited place names. It never accepts arbitrary model HTML, CSS, scripts or remote fonts. All agent instructions, generated notifications and starter memories are in English. Recipes change presentation, not factual memories. The chosen recipe is saved in the edition and included in the exact-version publication digest. The PDF and sanitized static export use that same recipe. Earlier editions without a recipe retain the classic layout; already delivered PDF bytes are preserved.
 
 Ask in Mattermost, for example:
 
@@ -283,11 +285,31 @@ python3 scripts/dev.py seed --all
 @mw-collector Update the English travel journal with every photograph and memory in this room. Choose a design that fits this journey. Preserve the existing cover, dates and locations. Do not publish.
 ```
 
-Wait for Publisher's new completion post and PDF. Open the latest book with the journal selector; an older completion link deliberately stays pinned to its original edition. In a replay-only judge environment, `python3 scripts/dev.py seed --all --generate` creates the updated demonstration editions instead. Existing private Okinawa uploads remain in their original journal.
+Wait for Publisher's new completion post and PDF. Open the latest book with the journal selector; an older completion link deliberately stays pinned to its original edition. In a replay-only judge environment, `python3 scripts/dev.py seed --all --generate` creates the updated demonstration editions instead. Obsolete pre-showcase uploads are moved to a private local retirement folder and are excluded from the active judge app.
+
+## English judging and retiring obsolete samples
+
+The active showcase contains **Kyoto, Paris, New York and Santorini** only. Narration, prompts, sample conversations, completion notices, editing examples, setup guides and PDF text are in English. Multilingual command parsing remains available; source quotations are always treated as original evidence rather than silently rewritten by a model.
+
+When upgrading an older installation, bootstrap archives its obsolete Switch room and Mattermost channel, removes that journal from the active catalog, and moves its unscoped database, private media, saved PDFs and exports to `/data/retired/legacy-journal` inside the local data volume. This folder has no web route, is ignored by Git and is never copied into a judge installation. Existing accounts, provider bindings and the active trip databases are retained. Upgrades do not relabel old personal memories as Santorini.
+
+Bootstrap also updates the Collector bot's historical protocol instructions to English using the official Mattermost partial-post API. It preserves author/post IDs, attachments and source memories; the originals remain in local unserved storage. Generation, review and publishing continue to use Switch, including all new Santorini requests. No additional agent pipeline is introduced.
+
+Use `python3 scripts/dev.py up`, `python3 scripts/console.py prepare`, then `python3 scripts/dev.py seed --all --generate` for the English replay showcase. To see actual AI writing, keep Console running and ask the Collector for an English album in the corresponding channel. Replay and LIVE editions remain visibly distinct.
 
 ## Locations and photo capture places
 
-Books display a **Places we remember** section and a location beneath each photograph, in both the web book and PDF. The local interactive coordinate sketch plots supplied pins without fetching tiles or sending coordinates to an external service. Its dashed lines connect memories, not recorded routes. **Open map** loads OpenStreetMap only when clicked.
+Books display a **Places we remember** section and a location beneath each photograph, in both the web book and PDF. **The web book automatically loads an OpenStreetMap basemap when the album opens**, without a button click or moving the reader away from the cover. Numbered pins open the place name, location provenance and matching photographs. **Show on this map** beneath a photograph takes you to its place; zoom controls and **Show all places** help you explore. The map works on mobile and in approved static exports, with no API key or additional Docker service.
+
+Street tiles require an internet connection and are requested automatically for an album with supplied coordinates. Leaflet 1.9.4, its styles and icons are bundled locally. OpenStreetMap receives the viewer's IP address, the requested map area and the site origin as the HTTP referrer; photo bytes, captions, messages and book/version URLs are not sent to the tile server. Attribution remains visible. Tiles use normal browser caching; MemoryWeaver does not bulk-download or store offline map packs. See the [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
+
+After **Hide street map**, or if tiles fail, the local studio's coordinate sketch and place links remain available. Its dashed lines connect memories, not recorded travel paths. Static exports retain the coordinate/place list when tiles are hidden or unavailable. Use **Load street map** to restore a hidden map or **Retry street map** after a connection failure. Hiding applies to the current view; reopening an album or switching editions loads its map automatically again. **Open map** opens the selected place on OpenStreetMap in another tab. Name-only places retain that search link without automatic geocoding or tile requests. PDFs retain the supplied place names, coordinates and map links; they do not fetch or embed remote street tiles.
+
+Fresh Docker setups include the map automatically. To update an existing running stack without re-seeding or regenerating its journals, run the following, then reload the album page:
+
+```sh
+python3 scripts/dev.py compose up -d --build --no-deps web publisher
+```
 
 - A place supplied with a post is labeled **Location shared by the traveler**. Use `[Location: Place name | latitude,longitude]` on a separate caption line; the coordinates are optional, and a name-only location is not silently geocoded.
 - If an uploaded photograph contains valid EXIF GPS, the sanitizer extracts a separate location record, labels it **Photo GPS**, and then removes EXIF from the served JPEG. It does not infer an address or landmark name. Some messaging/export tools strip GPS before upload; missing GPS remains **Location not supplied**.
@@ -300,14 +322,14 @@ Example memory, with a capture date and user-supplied place:
 We walked beneath the gates and wanted to keep this photograph.
 ```
 
-A stated post location takes precedence over image GPS for that post’s photos. Model-written location guesses are not used to populate maps. Saved editions snapshot the locations, so later metadata changes do not rewrite old books. The publication review and exact-version digest include the locations selected for that edition; no coordinates or photos are published merely by generating a local book. Each travel room has its own database, assets, revision history and delivery queue. New URLs include `?trip=kyoto&version=N`; old unqualified Okinawa completion links remain readable after upgrading.
+A stated post location takes precedence over image GPS for that post’s photos. Model-written location guesses are not used to populate maps. Saved editions snapshot the locations, so later metadata changes do not rewrite old books. The publication review and exact-version digest include the locations selected for that edition; no coordinates or photos are published merely by generating a local book. Each travel room has its own database, assets, revision history and delivery queue. New URLs include `?trip=kyoto&version=N`; retired books are removed from the active library and explicit retired-trip URLs return 404.
 
 ## Make it personal
 
 Post photographs and short messages in the Mattermost room. Multiple contributors can participate. A timestamp prefix is optional:
 
 ```text
-[2026-10-13T10:30:00+09:00] 美ら海水族館へ。ジンベエザメが想像以上に大きかった！
+[2026-10-13T10:30:00+09:00] We walked through the bamboo grove and wanted to keep this moment.
 ```
 
 An explicit capture date takes precedence over upload time. Without one, the upload time is used and should be reviewed. Available photo GPS is extracted into a labeled private location record before EXIF is removed from the JPEG; the app does not infer an itinerary, address or identity from an image. Storyteller receives the source text and photo references; the container-CLI Codex Editor can inspect up to eight sanitized photographs for visual consistency and selection. Console-managed providers use their native Switch tools instead of that eight-image harness limit. Captions provide the factual context of what happened, who was there, and when. Without captions, an image supports neutral visual description, not invented events.
@@ -315,10 +337,10 @@ An explicit capture date takes precedence over upload time. Without one, the upl
 Ask in Mattermost:
 
 ```text
-@mw-collector 今回の京都旅行をアルバムにして
-@mw-collector 2日目の文章をもっと感動的にして
-@mw-collector 表紙を竹林の写真に変更して
-@mw-collector 妻が投稿したコメントも反映して
+@mw-collector Create an English travel journal of our Kyoto trip.
+@mw-collector Make day two more heartfelt using only the original memories.
+@mw-collector Use the bamboo grove photograph as the cover.
+@mw-collector Include Hana’s original comments.
 ```
 
 For a new event, first post its actual date, words and photograph, then request an update. Plain generation/edit phrases also work; mentioning the Collector is the most reliable way to distinguish instructions from memories. The book UI’s editing dialog prepares an instruction to copy into Mattermost; it does not impersonate you or silently send a message.

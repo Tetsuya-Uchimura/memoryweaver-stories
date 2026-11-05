@@ -97,6 +97,40 @@ def test_location_snapshot_pdf_and_public_consent_are_version_bound(tmp_path):
     assert b'Fushimi Inari' in files['index.html'] and b'openstreetmap.org' in files['index.html']
 
 
+def test_street_map_export_escapes_metadata_and_restricts_runtime_files(tmp_path):
+    from html.parser import HTMLParser
+    from agents.publish import MAP_FILES
+    from scripts.verify_release import verify
+    store=make_book(Store(tmp_path),'kyoto');revision=store.revision()
+    hostile='Landmark "><img src=x onerror=alert(1)></script>'
+    for place in revision['places']:
+        place['name']=hostile
+    for place in revision['photo_locations'].values():
+        place['name']=hostile
+    destination,files=build_export(store,revision,{'user_id':'traveler','created':0})
+    class MapParser(HTMLParser):
+        stops=None
+        def handle_starttag(self,tag,attrs):
+            attrs=dict(attrs)
+            if 'data-map-stops' in attrs:self.stops=json.loads(attrs['data-map-stops'])
+    parser=MapParser();parser.feed(files['index.html'].decode())
+    assert parser.stops and parser.stops[0]['name']==hostile
+    assert 'source_id' not in json.dumps(parser.stops)
+    assert all(photo['url'].startswith('assets/') for stop in parser.stops for photo in stop['photos'])
+    assert b'<img src=x' not in files['index.html']
+    assert all(name in files for name in MAP_FILES)
+    assert b"script-src 'self'" in files['_headers'] and b'https://tile.openstreetmap.org' in files['_headers']
+    assert b'unsafe-inline' not in files['_headers']
+    verify(destination)
+    # A manifest hash does not authorize arbitrary extra JavaScript.
+    import hashlib
+    manifest=json.loads((destination/'release.json').read_text())
+    (destination/'unexpected.js').write_bytes(b'alert(1)')
+    manifest['files']['unexpected.js']=hashlib.sha256(b'alert(1)').hexdigest()
+    (destination/'release.json').write_text(json.dumps(manifest))
+    with pytest.raises(AssertionError,match='allowlist'):verify(destination)
+
+
 def test_missing_location_is_never_inferred_from_fixture_filename(tmp_path):
     root=Store(tmp_path);store=make_book(root,'paris')
     sources=deepcopy(store.revision()['sources'])
@@ -117,20 +151,20 @@ def test_unused_private_source_location_does_not_enter_export(tmp_path):
 async def test_legacy_version_links_and_runtime_binding_respect_trip_jobs(tmp_path,monkeypatch):
     from app import main
     root=Store(tmp_path);kyoto=make_book(root,'kyoto')
-    root.set('trip',dict(id='okinawa',legacy=True))
-    root.set('trips',[dict(id='okinawa',legacy=True),dict(id='kyoto')]);root.set('default_trip','kyoto')
+    root.set('trip',dict(id='retired',legacy=True))
+    root.set('trips',[dict(id='retired',legacy=True),dict(id='kyoto')]);root.set('default_trip','kyoto')
     for a in kyoto.all('assets'):root.put('assets',a)
     r=kyoto.revision();job=root.job('legacy','legacy');root.commit(r['album'],job['id'],'replay',r['sources'])
     monkeypatch.setattr(main,'store',root);monkeypatch.setenv('WEB_INTERNAL_TOKEN','secret-test-only')
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=main.app),base_url='http://local') as h:
-        assert (await h.get('/api/revisions/1')).json()['trip_id']=='okinawa'
+        assert (await h.get('/api/revisions/1')).json()['trip_id']=='retired'
         assert (await h.get('/api/revisions/1?trip=kyoto')).json()['trip_id']=='kyoto'
         kyoto.job('active','active')
         binding=dict(storyteller=dict(id='a',name='writer'),editor=dict(id='b',name='reviewer'))
         assert (await h.post('/internal/console',headers={'Authorization':'Bearer secret-test-only'},json=binding)).status_code==409
 
 
-@pytest.mark.parametrize('tid,design',[('kyoto','quiet'),('paris','editorial'),('new-york','urban')])
+@pytest.mark.parametrize('tid,design',[('kyoto','quiet'),('paris','editorial'),('new-york','urban'),('santorini','coastal')])
 def test_richer_books_have_six_distinct_sourced_photos_and_art_direction(tmp_path,tid,design):
     from agents.artifacts import render_artifacts
     from scripts.verify_release import verify

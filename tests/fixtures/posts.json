@@ -1,0 +1,44 @@
+[
+  {
+    "key": "arrival",
+    "author": "traveler",
+    "at": "2026-10-12T10:15:00+09:00",
+    "text": "We arrived at Fushimi Inari and walked beneath the red gates.",
+    "asset": "kyoto-gates"
+  },
+  {
+    "key": "bamboo",
+    "author": "hana",
+    "at": "2026-10-13T10:30:00+09:00",
+    "text": "The bamboo grove felt like a different side of Kyoto.",
+    "asset": "kyoto-bamboo"
+  },
+  {
+    "key": "river",
+    "author": "traveler",
+    "at": "2026-10-13T13:20:00+09:00",
+    "text": "We paused beside the river and looked at the bridge.",
+    "asset": "kyoto-river"
+  },
+  {
+    "key": "pause",
+    "author": "hana",
+    "at": "2026-10-12T16:45:00+09:00",
+    "text": "I liked taking our time together.",
+    "asset": null
+  },
+  {
+    "key": "temple",
+    "author": "traveler",
+    "at": "2026-10-14T10:10:00+09:00",
+    "text": "The temple hall was our last stop. I would love to return.",
+    "asset": "kyoto-hall"
+  },
+  {
+    "key": "home",
+    "author": "hana",
+    "at": "2026-10-14T10:30:00+09:00",
+    "text": "Seeing these places together is what I want to remember.",
+    "asset": null
+  }
+]

@@ -80,8 +80,8 @@ async def main():
             print(f"PASS Mattermost delivery v{version}: Publisher bot, title, version URL, cover and downloadable PDF in one channel post")
 
         before = (store.revision() or {}).get("version", 0)
-        target="kyoto-bamboo" if store.get("trip",{}).get("id")=="kyoto" else "sunset"
-        await post("@mw-collector Create a travel album from this room in English." if store.get("trip") else "@mw-collector 今回の沖縄旅行をアルバムにして")
+        target="kyoto-bamboo" if store.get("trip",{}).get("id")=="kyoto" else "kyoto-bamboo"
+        await post("@mw-collector Create a travel album from this room in English.")
         first = await wait_version(before)
         assert len(first["album"]["chapters"]) == 3
         expected = next(t for t in json.loads(Path("samples/trips.json").read_text()) if t["id"] == store.get("trip")["id"]) if store.get("trip",{}).get("id") in {"kyoto","paris","new-york"} else None
@@ -97,14 +97,14 @@ async def main():
         print("PASS revision: requested cover, prior version preserved")
         await wait_for_artifacts(second)
 
-        await post("@mw-collector 2日目の文章をもっと感動的にして")
+        await post("@mw-collector Make day two more emotional using only the original memories.")
         third = await wait_version(second["version"])
         assert third["album"]["chapters"][1]["body"] != second["album"]["chapters"][1]["body"]
         assert third["album"]["cover_asset_id"] == target
         print("PASS revision: day-two prose updated, requested cover preserved")
         await wait_for_artifacts(third)
 
-        await post(f"@mw-publisher PDFを再送して v{third['version']}")
+        await post(f"@mw-publisher resend PDF v{third['version']}")
         deadline = time.monotonic() + 30
         while time.monotonic() < deadline:
             delivery = store.delivery(third["version"])

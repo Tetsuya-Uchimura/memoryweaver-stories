@@ -18,12 +18,12 @@ from scripts.verify_release import verify
 @pytest.fixture
 def memory(tmp_path):
     store = Store(tmp_path)
-    for asset in json.loads(Path("samples/assets.json").read_text()):
+    for asset in json.loads(Path("tests/fixtures/assets.json").read_text()):
         store.put("assets", asset)
-    sources = [dict(id=p["key"], author=p["author"], text=p["text"], captured_at=p["at"], asset_ids=[p["asset"]] if p["asset"] else []) for p in json.loads(Path("samples/posts.json").read_text())]
+    sources = [dict(id=p["key"], author=p["author"], text=p["text"], captured_at=p["at"], asset_ids=[p["asset"]] if p["asset"] else []) for p in json.loads(Path("tests/fixtures/posts.json").read_text())]
     for source in sources:
         store.put("sources", source)
-    job = store.job("今回の沖縄旅行をアルバムにして", "request-1")
+    job = store.job("Create an English travel journal", "request-1")
     payload = dict(job=job, sources=sources, previous=None)
     album = replay(payload)
     version = store.commit(album, job["id"], "replay", sources)
@@ -33,7 +33,7 @@ def memory(tmp_path):
 def test_shuffled_capture_dates_and_evidence(memory):
     store, payload, revision = memory
     album = Album.model_validate(revision["album"])
-    validate_evidence(album, payload["sources"], {"coast", "soba", "aquarium", "sunset"})
+    validate_evidence(album, payload["sources"], {"kyoto-gates", "kyoto-river", "kyoto-bamboo", "kyoto-hall"})
     assert [c.date for c in album.chapters] == ["2026-10-12", "2026-10-13", "2026-10-14"]
     assert any(s["author"] == "hana" for s in revision["sources"])
 
@@ -47,9 +47,9 @@ def test_unsupported_evidence_rejected(memory, mutation):
     elif mutation == "citation":
         album.chapters[0].source_ids = ["nonexistent-post"]
     else:
-        album.chapters[0].asset_ids = ["sunset"]
+        album.chapters[0].asset_ids = ["kyoto-hall"]
     with pytest.raises(ValueError):
-        validate_evidence(album, payload["sources"], {"coast", "soba", "aquarium", "sunset"})
+        validate_evidence(album, payload["sources"], {"kyoto-gates", "kyoto-river", "kyoto-bamboo", "kyoto-hall"})
 
 
 def test_concurrent_request_and_stale_commit(memory):
@@ -74,7 +74,7 @@ async def test_approval_is_exact_and_invalidated_by_edit(memory, monkeypatch):
     with pytest.raises(ValueError, match="in progress"):
         await approve_and_publish(store, command, entry)
     changed = deepcopy(revision["album"])
-    changed["cover_asset_id"] = "sunset"
+    changed["cover_asset_id"] = "kyoto-hall"
     store.commit(changed, job["id"], "replay", payload["sources"])
     with pytest.raises(ValueError, match="exactly"):
         await approve_and_publish(store, command, entry)
@@ -125,7 +125,7 @@ async def test_media_requires_token_and_removes_exif(tmp_path, monkeypatch):
 
 def test_approval_binds_photo_bytes(memory):
     store, _, revision = memory
-    revision["asset_hashes"]["coast"] = "0" * 64
+    revision["asset_hashes"]["kyoto-gates"] = "0" * 64
     with pytest.raises(ValueError, match="Photograph bytes differ"):
         build_export(store, revision, dict(user_id="human", created=time.time()))
 

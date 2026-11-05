@@ -39,7 +39,9 @@ async def security(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store"
-    response.headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+    # Local map code loads tile images only; their per-image referrer
+    # policy sends the site origin to OSM, never the trip/version URL.
+    response.headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data: https://tile.openstreetmap.org; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
     return response
 
 
@@ -74,7 +76,7 @@ def state(trip: str | None = None):
         "mode": revision["mode"] if revision else ("live" if store.get("console") else os.getenv("AI_MODE", "replay")),
         "runtime": "console" if store.get("console") else "docker",
         "trip":current.get("trip"),
-        "mattermost_url": os.getenv("MATTERMOST_PUBLIC_URL","http://localhost:8065").rstrip("/")+"/memoryweaver/channels/"+current.get("trip",{}).get("channel","okinawa-memories"),
+        "mattermost_url": os.getenv("MATTERMOST_PUBLIC_URL","http://localhost:8065").rstrip("/")+"/memoryweaver/channels/"+current.get("trip",{}).get("channel","kyoto-travel-journal"),
         "publishing_enabled": os.getenv("PUBLISH_ENABLED") == "true",
         "publication": current.get("publication"),
     }
@@ -141,7 +143,7 @@ def download_pdf(version: int, trip: str | None = None):
         raise HTTPException(404)
     pdf, _, _ = artifact_paths(current, version)
     if not pdf.is_file():
-        raise HTTPException(409, "This version's PDF is not ready. Ask @mw-publisher PDFを再送して v" + str(version) + " in Mattermost.")
+        raise HTTPException(409, "This version's PDF is not ready. Ask @mw-publisher resend PDF v" + str(version) + " in Mattermost.")
     return FileResponse(pdf, media_type="application/pdf", filename=pdf.name)
 
 

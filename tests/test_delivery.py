@@ -18,28 +18,28 @@ from app.store import Store
 @pytest.fixture
 def completed(tmp_path):
     store = Store(tmp_path)
-    for asset in json.loads(Path("samples/assets.json").read_text()):
+    for asset in json.loads(Path("tests/fixtures/assets.json").read_text()):
         store.put("assets", asset)
-    sources = [dict(id=p["key"], author=p["author"], text=p["text"], captured_at=p["at"], asset_ids=[p["asset"]] if p["asset"] else []) for p in json.loads(Path("samples/posts.json").read_text())]
-    job = store.job("旅行記にして", "sample-request")
+    sources = [dict(id=p["key"], author=p["author"], text=p["text"], captured_at=p["at"], asset_ids=[p["asset"]] if p["asset"] else []) for p in json.loads(Path("tests/fixtures/posts.json").read_text())]
+    job = store.job("Create an English travel journal", "sample-request")
     album = replay(dict(job=job, sources=sources, previous=None))
     store.commit(album, job["id"], "replay", sources)
     return store, store.revision()
 
 
-def test_pdf_is_a_readable_japanese_book_and_excludes_unused_sources(completed):
+def test_pdf_is_a_readable_english_book_and_excludes_unused_sources(completed):
     store, revision = completed
     store.put("sources", {"id": "unused-private", "text": "SECRET-UNUSED-MEMORY", "author": "do-not-export", "captured_at": "2026-01-01", "asset_ids": []})
     pdf, cover, metadata = render_artifacts(store, revision)
     reader = PdfReader(pdf)
     assert len(reader.pages) >= 5  # cover, three chapters and credits
     text = "".join("".join(p.extract_text().split()) for p in reader.pages)
-    assert "あの青を、もう一度。" in text
-    assert "ジンベエザメが想像以上に大きかった！" in text
+    assert "Smallmoments,lastingplaces" in text
+    assert "bamboogrovefeltlikeadifferentsideofKyoto" in text
     assert "SECRET-UNUSED-MEMORY" not in text
     assert "do-not-export" not in text
     assert reader.metadata.author == "MemoryWeaver"
-    assert cover.read_bytes() == Path("app/static/assets/coast.jpg").read_bytes()
+    assert cover.read_bytes() == Path("app/static/assets/kyoto-gates.jpg").read_bytes()
     stamp = pdf.stat().st_mtime_ns
     assert render_artifacts(store, revision)[2] == metadata
     assert pdf.stat().st_mtime_ns == stamp
@@ -50,8 +50,8 @@ def test_pdf_is_a_readable_japanese_book_and_excludes_unused_sources(completed):
 
 def test_pdf_blocks_external_resources_and_escapes_untrusted_text(completed):
     store, revision = completed
-    fetch = private_fetcher({"coast": b"safe-image"})
-    assert fetch("https://memoryweaver.invalid/photos/coast.jpg")["string"] == b"safe-image"
+    fetch = private_fetcher({"kyoto-gates": b"safe-image"})
+    assert fetch("https://memoryweaver.invalid/photos/kyoto-gates.jpg")["string"] == b"safe-image"
     for url in ["file:///etc/passwd", "http://169.254.169.254/", "https://example.com/tracker", "data:text/html,secret"]:
         with pytest.raises(ValueError, match="allowlist"):
             fetch(url)
@@ -99,7 +99,7 @@ async def test_delivery_retries_without_a_new_revision_and_is_idempotent(complet
     await manager.process(1)
     assert store.delivery(1)["state"] == "retrying"
     assert store.revision()["version"] == 1
-    assert "再試行" in client.messages[0]
+    assert "Retrying" in client.messages[0]
     client.fail = False
     await manager.process(1)
     await manager.process(1)

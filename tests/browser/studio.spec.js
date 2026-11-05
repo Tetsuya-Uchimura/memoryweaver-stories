@@ -1,4 +1,8 @@
 const {test,expect} = require('@playwright/test');
+// Keep automated UI checks independent of the public map tile service.
+test.beforeEach(async({page})=>{
+  await page.route('https://tile.openstreetmap.org/**',route=>route.abort());
+});
 
 test('book, evidence, memories, collaboration and privacy are usable', async ({page,request},testInfo) => {
   const state = await (await request.get('/api/state')).json();

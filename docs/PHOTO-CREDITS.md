@@ -1,23 +1,17 @@
 # Sample photo credits
 
-These are licensed **illustrative stock photographs**, not images of the fictional travelers and not proof that the sample itinerary occurred. The sample posts are original fictional text. The four legacy Okinawa JPEGs were resized and re-encoded, and EXIF/GPS metadata was removed. Cropping in the UI is presentational. The photographers do not endorse MemoryWeaver.
+The Kyoto, Paris, New York and Santorini journeys contain original fictional English memories. These licensed photographs illustrate landmarks and scenery; they are not pictures of the fictional contributors or proof that the sample itinerary occurred. Sample location pins are authored approximate landmarks, not the photographer's original camera position.
 
-| Local asset | Work and creator | License |
-| --- | --- | --- |
-| `coast.jpg` | [Okinawa beach.jpg](https://commons.wikimedia.org/wiki/File:Okinawa_beach.jpg), VKaeru | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
-| `aquarium.jpg` | [Main tank of the Kuroshio Sea in Okinawa Churaumi Aquarium.JPG](https://commons.wikimedia.org/wiki/File:Main_tank_of_the_Kuroshio_Sea_in_Okinawa_Churaumi_Aquarium.JPG), そらみみ | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
-| `soba.jpg` | [Okinawa soba in Yamabare 2.jpg](https://commons.wikimedia.org/wiki/File:Okinawa_soba_in_Yamabare_2.jpg), Syced | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
-| `sunset.jpg` | [Okinawa sunset (52117078771).jpg](https://commons.wikimedia.org/wiki/File:Okinawa_sunset_(52117078771).jpg), Raita Futo | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/) |
+All 24 shipped JPEGs are resized and re-encoded with metadata removed. Display cropping is presentational. The photographers do not endorse MemoryWeaver. Modified share-alike copies retain their respective image licenses; the code's MIT license does not relicense photography. Attribution and license links are included in the web book, PDF and sanitized export.
 
-The modified copies of the share-alike photographs remain available under their respective share-alike licenses. The application code’s MIT license does not relicense these images. Attribution and license links appear in the private UI and are retained in published exports.
+`samples/world-assets.json` contains the machine-readable credits. `scripts/fetch_world_assets.py` refreshes them; normal judging uses the images shipped with the repository and requires no image download.
 
-`samples/assets.json` is the machine-readable credit record. `scripts/fetch_assets.py` can refresh the copies from Wikimedia; normal judging does not need to download them again because they are included in the repository.
-
-
-## World-trip showcase (primary judge fixtures)
-
-The Kyoto, Paris and New York narratives are fictional. These are licensed illustrative landmark photos, not photographs of the fictional contributors. Approximate sample itinerary pins are authored fixture data and do not claim the photographer’s original camera position. JPEGs are resized and stripped of metadata; modified image copies remain available under the indicated original image licenses.
-
+- `santorini-oia.jpg` — [Blue Domed Church - Oia, Santorini, Greece - 20 July 2008.jpg](https://commons.wikimedia.org/wiki/File:Blue%20Domed%20Church%20-%20Oia%2C%20Santorini%2C%20Greece%20-%2020%20July%202008.jpg) — George M. Groutas · CC BY 2.0 · resized, metadata removed · [license](https://creativecommons.org/licenses/by/2.0/).
+- `santorini-harbour.jpg` — [Santorini, Oia 01.jpg](https://commons.wikimedia.org/wiki/File:Santorini%2C%20Oia%2001.jpg) — LBM1948 · CC BY-SA 4.0 · resized, metadata removed · [license](https://creativecommons.org/licenses/by-sa/4.0/).
+- `santorini-caldera.jpg` — [Views of the caldera from Fira, 226497.jpg](https://commons.wikimedia.org/wiki/File:Views%20of%20the%20caldera%20from%20Fira%2C%20226497.jpg) — Zde · CC BY-SA 4.0 · resized, metadata removed · [license](https://creativecommons.org/licenses/by-sa/4.0/).
+- `santorini-beach.jpg` — [Perissa Beach and Mésa Vounó at sunset, May 2024.jpg](https://commons.wikimedia.org/wiki/File:Perissa%20Beach%20and%20M%C3%A9sa%20Voun%C3%B3%20at%20sunset%2C%20May%202024.jpg) — PCN02WPS · CC BY-SA 4.0 · resized, metadata removed · [license](https://creativecommons.org/licenses/by-sa/4.0/).
+- `santorini-red-beach.jpg` — [Red Beach in Santorini.jpg](https://commons.wikimedia.org/wiki/File:Red%20Beach%20in%20Santorini.jpg) — Anthony Baratier · CC BY-SA 4.0 · resized, metadata removed · [license](https://creativecommons.org/licenses/by-sa/4.0/).
+- `santorini-sunset.jpg` — [Santorini Sunset.jpg](https://commons.wikimedia.org/wiki/File:Santorini%20Sunset.jpg) — SofiaGMussolin · CC BY-SA 4.0 · resized, metadata removed · [license](https://creativecommons.org/licenses/by-sa/4.0/).
 - `kyoto-river.jpg` — [Togetsu-kyō bridge at golden hour, Kyoto, Japan.jpg](https://commons.wikimedia.org/wiki/File:Togetsu-ky%C5%8D%20bridge%20at%20golden%20hour%2C%20Kyoto%2C%20Japan.jpg) — Basile Morin · CC BY-SA 4.0 · resized, metadata removed · [license](https://creativecommons.org/licenses/by-sa/4.0/).
 - `kyoto-gion.jpg` — [A view of Gion corner in Geisha district, Kyoto, Japan.jpg](https://commons.wikimedia.org/wiki/File:A%20view%20of%20Gion%20corner%20in%20Geisha%20district%2C%20Kyoto%2C%20Japan.jpg) — Joli Rumi · CC BY-SA 4.0 · resized, metadata removed · [license](https://creativecommons.org/licenses/by-sa/4.0/).
 - `kyoto-hall.jpg` — [JAP Kyoto Kiyomizu-dera.jpg](https://commons.wikimedia.org/wiki/File:JAP%20Kyoto%20Kiyomizu-dera.jpg) — Grueslayer @Wikipedia · CC BY-SA 4.0 · resized, metadata removed · [license](https://creativecommons.org/licenses/by-sa/4.0/).

@@ -44,7 +44,7 @@ class Chapter(Strict):
 
 
 class Album(Strict):
-    design: Literal["classic", "quiet", "editorial", "urban"] | None = None
+    design: Literal["classic", "quiet", "editorial", "urban", "coastal"] | None = None
     title: str = Field(min_length=1, max_length=160)
     subtitle: str = Field(max_length=600)
     location: str

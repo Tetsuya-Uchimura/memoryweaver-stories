@@ -11,7 +11,7 @@ import tempfile
 
 from agents.publish import publication_digest, selected_assets
 
-TEMPLATE_VERSION = "private-pdf-v4-art-direction"
+TEMPLATE_VERSION = "private-pdf-v5-coastal-english"
 
 
 def album_base_url():
@@ -84,7 +84,7 @@ def pdf_html(revision, assets):
             cells = ''.join('<td><img alt="Travel photograph" src="' + image(asset_id) + '"><p class="credit">' + escape(assets[asset_id]["credit"])+("<br>Location: "+escape(photo_places[asset_id]["name"])+" · "+escape(photo_places[asset_id]["basis"])+" · <a href=\""+escape(map_url(photo_places[asset_id]),quote=True)+"\">Open map</a>" if asset_id in photo_places else "<br>Location not supplied") + '</p></td>' for asset_id in chapter["asset_ids"][start:start + columns])
             figures.append('<table class="photographs"><tr>' + cells + '</tr></table>')
         paragraphs = ''.join('<p class="prose">' + escape(paragraph) + '</p>' for paragraph in chapter["body"].split("\n\n"))
-        quote = '<blockquote>「' + escape(chapter["quote"]) + '」</blockquote>' if chapter["quote"] else ''
+        quote = '<blockquote>“' + escape(chapter["quote"]) + '”</blockquote>' if chapter["quote"] else ''
         posted = all(sources[sid].get("date_basis") == "posted" for sid in chapter["source_ids"])
         date_label = "PHOTO NOTE · POSTED" if posted else f'DAY {chapter["day"]:02}'
         chapters.append(f'<section class="chapter"><div class="eyebrow">{date_label} · {escape(chapter["date"])}</div><h2>{escape(chapter["title"])}</h2>{"".join(figures)}{paragraphs}{quote}</section>')
@@ -141,6 +141,17 @@ def pdf_html(revision, assets):
         .eyebrow{color:#8d344a}h2{color:#78374b;font-style:italic}
         blockquote{color:#8d344a;border-color:#bc8e99}td img{object-fit:contain;height:86mm}
         .credit{color:#79616a}a{color:#8d344a}
+        """,
+        "coastal": """
+        body{color:#174b61}.cover{background:#eef9fb;color:#174b61}
+        .cover img{top:0;left:0;width:210mm;height:180mm;object-fit:cover}.shade{display:none}
+        .cover-top{color:#fff;text-shadow:0 1px 3px #174b61;top:14mm}
+        .cover-copy{top:193mm;left:18mm;right:18mm;bottom:auto;text-align:center}
+        .cover h1{font-family:Georgia,serif;font-size:31pt;font-weight:400;line-height:1.2;margin:4mm 0}
+        .cover .eyebrow{color:#117b98}.cover .subtitle{font-size:10pt;line-height:1.6}
+        .cover .dates{color:#117b98;border-color:#b1dce6;margin-top:6mm;font-size:7pt;padding-top:4mm}
+        .eyebrow{color:#117b98}h2{color:#117b98}blockquote{color:#287a91;border-color:#e0b98b}
+        td img{object-fit:contain;height:85mm}.credit{color:#597b87}a{color:#117b98}
         """,
         "urban": """
         body{font-family:'Noto Sans CJK JP','Helvetica Neue',sans-serif;color:#1c2631;line-height:1.8}

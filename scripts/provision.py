@@ -31,11 +31,11 @@ async def main():
         sibling = clients["editor"] if role == "collector" else clients["collector"]
         await sibling.op("update_agent_detail", agent_id=client.agent["id"], addressing="anyone")
     collector = clients["collector"]
-    # World-trip setup preserves an existing Okinawa room/data in place.
+    # Provision the English judge showcase and retire obsolete sample journals.
     from scripts.trip_setup import provision_trips
     await provision_trips(store,saved,collector)
-    for asset in json.loads(Path("samples/assets.json").read_text()):
-        store.put("assets", asset)
+    from scripts.english_setup import english_protocol_history
+    await english_protocol_history(store)
     # The web initializes SQLite as root; agents run as an unprivileged user.
     Path("/home/weaver/.codex").mkdir(parents=True, exist_ok=True)
     Path("/home/weaver/.claude").mkdir(parents=True, exist_ok=True)

@@ -15,10 +15,10 @@ from app.store import Store
 
 @pytest.mark.parametrize("message,caption,basis", [
     ("@mw-collector Please add this photo to the album as well.", "", "posted"),
-    ("@mw-collector この写真もアルバムに追加して", "", "posted"),
+    ("@mw-collector \u3053\u306e\u5199\u771f\u3082\u30a2\u30eb\u30d0\u30e0\u306b\u8ffd\u52a0\u3057\u3066", "", "posted"),
     ("Please add this photo to the album as well.", "", "posted"),
-    ("@mw-collector この写真も追加して\n海がすごく綺麗だった。", "海がすごく綺麗だった。", "posted"),
-    ("@mw-collector この写真も追加して\n[2026-10-13T10:00:00+09:00] アルバムに残したい青い海。", "アルバムに残したい青い海。", "captured"),
+    ("@mw-collector \u3053\u306e\u5199\u771f\u3082\u8ffd\u52a0\u3057\u3066\n\u6d77\u304c\u3059\u3054\u304f\u7dba\u9e97\u3060\u3063\u305f。", "\u6d77\u304c\u3059\u3054\u304f\u7dba\u9e97\u3060\u3063\u305f。", "posted"),
+    ("@mw-collector \u3053\u306e\u5199\u771f\u3082\u8ffd\u52a0\u3057\u3066\n[2026-10-13T10:00:00+09:00] \u30a2\u30eb\u30d0\u30e0\u306b\u6b8b\u3057\u305f\u3044\u9752\u3044\u6d77。", "\u30a2\u30eb\u30d0\u30e0\u306b\u6b8b\u3057\u305f\u3044\u9752\u3044\u6d77。", "captured"),
     ("@mw-collector Please add this photo\nWe paddled together.", "We paddled together.", "posted"),
     ("@mw-collector Please add this photo\n[Location: Story Bridge, Brisbane | -27.463,153.035]\nWe stopped here.", "We stopped here.", "posted"),
 ])
@@ -76,8 +76,8 @@ async def test_attached_request_reaches_evidence_and_book(tmp_path, monkeypatch,
     assert album.chapters[0].quote == caption
     assert message.splitlines()[0] not in album.chapters[0].body
     if basis == "posted":
-        assert "投稿日" in album.chapters[0].body
-        assert "撮影日未確認" in album.date_label
+        assert "posting date" in album.chapters[0].body
+        assert "Capture dates unconfirmed" in album.date_label
     else:
         assert source["captured_at"].startswith("2026-10-13")
         assert album.date_label == "2026-10-13 — 2026-10-13"
@@ -95,29 +95,29 @@ async def test_plain_requests_are_excluded_but_dated_memories_remain(tmp_path):
         return dict(id=id, kind="message", sender_kind=sender_kind, sender_name="traveler", timestamp=1793829170120, body=body, attachments=attachments or [])
     await worker.collect([
         entry("instruction", "@mw-collector Please add this photo to the album"),
-        entry("retry", "@mw-publisher PDFを再送して v9"),
+        entry("retry", "@mw-publisher PDF\u3092\u518d\u9001\u3057\u3066 v9"),
         entry("approval", "PUBLISH v9 digest I CONSENT TO PUBLIC PHOTOS AND TEXT"),
-        entry("dated", "[2026-10-13T10:30:00+09:00] アルバムに残したい青い海。"),
+        entry("dated", "[2026-10-13T10:30:00+09:00] \u30a2\u30eb\u30d0\u30e0\u306b\u6b8b\u3057\u305f\u3044\u9752\u3044\u6d77。"),
         entry("bot", "Photo attached", "agent", [dict(mimetype="image/webp", mxc="must-not-download")]),
     ])
     sources = worker.store.all("sources")
     assert len(sources) == 1
     assert sources[0]["id"] == "dated"
     assert sources[0]["date_basis"] == "captured"
-    assert sources[0]["text"] == "アルバムに残したい青い海。"
+    assert sources[0]["text"] == "\u30a2\u30eb\u30d0\u30e0\u306b\u6b8b\u3057\u305f\u3044\u9752\u3044\u6d77。"
 
 
 def test_captionless_upload_does_not_invent_a_new_travel_day():
     sources = [
-        dict(id="captured", author="traveler", text="海が綺麗だった。", captured_at="2026-10-13T10:00:00+09:00", date_basis="captured", asset_ids=["coast"]),
+        dict(id="captured", author="traveler", text="\u6d77\u304c\u7dba\u9e97\u3060\u3063\u305f。", captured_at="2026-10-13T10:00:00+09:00", date_basis="captured", asset_ids=["kyoto-gates"]),
         dict(id="uploaded", author="traveler", text="", captured_at="2026-11-04T21:52:50+00:00", date_basis="posted", asset_ids=["uploaded-photo"]),
     ]
-    album = replay(dict(sources=sources, job={"request": "この写真も追加して"}, previous=None))
+    album = replay(dict(sources=sources, job={"request": "\u3053\u306e\u5199\u771f\u3082\u8ffd\u52a0\u3057\u3066"}, previous=None))
     assert album["date_label"] == "2026-10-13 — 2026-10-13"
-    assert album["chapters"][-1]["title"] == "写真の記録。"
+    assert album["chapters"][-1]["title"] == "A moment to keep"
     assert album["chapters"][-1]["quote"] == ""
     assert album["chapters"][-1]["asset_ids"] == ["uploaded-photo"]
-    validate_evidence(Album.model_validate(album), sources, {"coast", "uploaded-photo"})
-    document = pdf_html(dict(version=1, album=album, sources=sources, mode="replay"), {a:dict(credit="Private upload", label="Photograph", sample=False) for a in ["coast", "uploaded-photo"]})
+    validate_evidence(Album.model_validate(album), sources, {"kyoto-gates", "uploaded-photo"})
+    document = pdf_html(dict(version=1, album=album, sources=sources, mode="replay"), {a:dict(credit="Private upload", label="Photograph", sample=False) for a in ["kyoto-gates", "uploaded-photo"]})
     assert "PHOTO NOTE · POSTED · 2026-11-04" in document
     assert "DAY 02" not in document

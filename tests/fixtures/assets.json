@@ -1,0 +1,38 @@
+[
+  {
+    "id": "kyoto-river",
+    "url": "/static/assets/kyoto-river.jpg",
+    "label": "Togetsu-ky\u014d bridge at golden hour, Kyoto, Japan.jpg",
+    "sample": true,
+    "credit": "Basile Morin \u00b7 CC BY-SA 4.0 \u00b7 resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Togetsu-ky%C5%8D%20bridge%20at%20golden%20hour%2C%20Kyoto%2C%20Japan.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "kyoto-hall",
+    "url": "/static/assets/kyoto-hall.jpg",
+    "label": "JAP Kyoto Kiyomizu-dera.jpg",
+    "sample": true,
+    "credit": "Grueslayer @Wikipedia \u00b7 CC BY-SA 4.0 \u00b7 resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:JAP%20Kyoto%20Kiyomizu-dera.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "kyoto-gates",
+    "url": "/static/assets/kyoto-gates.jpg",
+    "label": "Fushimi Inari Taisha Torii entrance.jpg",
+    "sample": true,
+    "credit": "Immanuelle \u00b7 CC BY-SA 4.0 \u00b7 resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Fushimi%20Inari%20Taisha%20Torii%20entrance.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "kyoto-bamboo",
+    "url": "/static/assets/kyoto-bamboo.jpg",
+    "label": "Bamboo Grove, Arashiyama, Kyoto, Japan.jpg",
+    "sample": true,
+    "credit": "Basile Morin \u00b7 CC BY-SA 4.0 \u00b7 resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Bamboo%20Grove%2C%20Arashiyama%2C%20Kyoto%2C%20Japan.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  }
+]

@@ -359,5 +359,134 @@
         }
       }
     ]
+  },
+  {
+    "id": "santorini",
+    "label": "Santorini · Aegean days",
+    "destination": "Santorini, Greece",
+    "channel": "santorini-travel-journal",
+    "language": "en",
+    "description": "Fictional Santorini journal · white villages, volcanic beaches and the Aegean Sea",
+    "title": "Where the island meets the blue",
+    "subtitle": "Three days of sea views, village walks and moments worth keeping.",
+    "posts": [
+      {
+        "key": "santorini-oia",
+        "author": "traveler",
+        "at": "2026-06-08T09:00:00+03:00",
+        "text": "We arrived in Oia and stopped to look at the white buildings above the Aegean Sea. This was the first photograph I wanted to keep.",
+        "asset": "santorini-oia",
+        "location": {
+          "name": "Oia, Santorini",
+          "latitude": 36.4614,
+          "longitude": 25.3747,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "santorini-harbour",
+        "author": "hana",
+        "at": "2026-06-08T16:00:00+03:00",
+        "text": "We went down to Ammoudi Bay and took a photograph of the harbour beneath the cliffs. I liked seeing the village from this different angle.",
+        "asset": "santorini-harbour",
+        "location": {
+          "name": "Ammoudi Bay, Santorini",
+          "latitude": 36.4606,
+          "longitude": 25.3696,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "santorini-caldera",
+        "author": "traveler",
+        "at": "2026-06-09T10:00:00+03:00",
+        "text": "We paused above the caldera in Fira. We had no hurry to leave the sea view.",
+        "asset": "santorini-caldera",
+        "location": {
+          "name": "Fira caldera, Santorini",
+          "latitude": 36.417,
+          "longitude": 25.431,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "santorini-beach",
+        "author": "hana",
+        "at": "2026-06-09T18:00:00+03:00",
+        "text": "Later we walked beside Perissa Beach. We watched the sea and kept this photograph of the shoreline.",
+        "asset": "santorini-beach",
+        "location": {
+          "name": "Perissa Beach, Santorini",
+          "latitude": 36.3561,
+          "longitude": 25.4754,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "santorini-red-beach",
+        "author": "traveler",
+        "at": "2026-06-10T10:00:00+03:00",
+        "text": "On our last day we looked across Red Beach from the viewpoint. The red cliffs and blue water belong together in our album.",
+        "asset": "santorini-red-beach",
+        "location": {
+          "name": "Red Beach viewpoint, Santorini",
+          "latitude": 36.3473,
+          "longitude": 25.3947,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "santorini-sunset",
+        "author": "hana",
+        "at": "2026-06-10T19:00:00+03:00",
+        "text": "We ended the trip watching the sunset over the sea. I would love to come back and take our time here again.",
+        "asset": "santorini-sunset",
+        "location": {
+          "name": "Santorini sunset viewpoint",
+          "latitude": 36.4614,
+          "longitude": 25.3747,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "santorini-reply-8",
+        "author": "hana",
+        "at": "2026-06-08T20:00:00+03:00",
+        "text": "The sea is the thread I want to follow through this book.",
+        "asset": null,
+        "location": {
+          "name": "Oia, Santorini",
+          "latitude": 36.4614,
+          "longitude": 25.3747,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "santorini-reply-9",
+        "author": "traveler",
+        "at": "2026-06-09T20:00:00+03:00",
+        "text": "Please keep the village views and the beach photographs together.",
+        "asset": null,
+        "location": {
+          "name": "Fira caldera, Santorini",
+          "latitude": 36.417,
+          "longitude": 25.431,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "santorini-reply-10",
+        "author": "hana",
+        "at": "2026-06-10T20:00:00+03:00",
+        "text": "Three days, six photographs, and so many reasons to return.",
+        "asset": null,
+        "location": {
+          "name": "Santorini sunset viewpoint",
+          "latitude": 36.4614,
+          "longitude": 25.3747,
+          "basis": "sample"
+        }
+      }
+    ]
   }
 ]

@@ -1,13 +1,17 @@
 const {test,expect}=require('@playwright/test');
+test.beforeEach(async({page})=>{
+ // Exercise offline fallback without downloading public tiles in automated tests.
+ await page.route('https://tile.openstreetmap.org/**',route=>route.abort());
+});
 test('English world journeys, sourced photo places and local map pins',async({page,request},testInfo)=>{
  const catalog=await (await request.get('/api/trips')).json();
  test.skip(!catalog.trips.length,'Requires world sample setup');
- const remote=[];page.on('request',r=>{if(!r.url().startsWith('http://localhost:8787'))remote.push(r.url());});
- for(const [trip,place] of [['kyoto','Fushimi Inari'],['paris','Eiffel Tower'],['new-york','Brooklyn Bridge']]) {
+ const remote=[];page.on('request',r=>{if(!r.url().startsWith('http://localhost:8787')&&!r.url().startsWith('https://tile.openstreetmap.org/'))remote.push(r.url());});
+ for(const [trip,place] of [['kyoto','Fushimi Inari'],['paris','Eiffel Tower'],['new-york','Brooklyn Bridge'],['santorini','Oia']]) {
   await page.goto('/?'+new URLSearchParams({trip}));
   await expect(page.locator('#trip-select')).toHaveValue(trip);
   await expect(page.locator('.cover-title')).toBeVisible();
-  await expect(page.locator('.book')).toHaveAttribute('data-design',({kyoto:'quiet',paris:'editorial','new-york':'urban'})[trip]);
+  await expect(page.locator('.book')).toHaveAttribute('data-design',({kyoto:'quiet',paris:'editorial','new-york':'urban',santorini:'coastal'})[trip]);
   expect(await page.locator('.chapter img').count()).toBeGreaterThanOrEqual(6);
   await expect(page.locator('.journey-places')).toContainText(place);
   await expect(page.locator('.photo-place').first()).toContainText('Fictional sample');
@@ -26,11 +30,15 @@ test('English world journeys, sourced photo places and local map pins',async({pa
  expect(remote).toEqual([]);
 });
 
-test('legacy unqualified completion links retain the old private edition',async({page,request})=>{
+test('judge library contains four English journals and no retired book',async({page,request})=>{
  const catalog=await(await request.get('/api/trips')).json();
- test.skip(!catalog.legacy,'Fresh installations do not contain legacy data');
- const s=await(await request.get('/api/state?trip='+catalog.legacy)).json();
- await page.goto('/?version='+s.revision.version);
- await expect(page.locator('#trip-select')).toHaveValue(catalog.legacy);
- await expect(page.locator('.cover-title')).toHaveText(s.revision.album.title);
+ expect(catalog.trips.map(t=>t.id)).toEqual(['kyoto','paris','new-york','santorini']);
+ expect(catalog.legacy).toBeNull();
+ expect(catalog.trips.every(t=>t.language==='en')).toBeTruthy();
+ const removed=await request.get('/api/state?trip=retired');
+ expect(removed.status()).toBe(404);
+ await page.goto('/?trip=santorini');
+ await expect(page.locator('.book')).toHaveAttribute('data-design','coastal');
+ await page.locator('[data-view="room"]').click();
+ expect(await page.locator('.activity-list').innerText()).not.toMatch(/[\u3040-\u30ff\u3400-\u9fff]/);
 });

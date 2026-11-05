@@ -17,10 +17,10 @@ def room(tmp_path):
     store = Store(tmp_path)
     binding = dict(storyteller=dict(id="native-claude", name="mw-storyteller-claude"), editor=dict(id="native-codex", name="mw-editor-codex"))
     store.set("console", binding)
-    for a in json.loads(Path("samples/assets.json").read_text()):
+    for a in json.loads(Path("tests/fixtures/assets.json").read_text()):
         store.put("assets", a)
-    sources = [dict(id=p["key"], author=p["author"], text=p["text"], captured_at=p["at"], asset_ids=[p["asset"]] if p["asset"] else []) for p in json.loads(Path("samples/posts.json").read_text())]
-    payload = dict(job=store.job("旅行記にして", "request"), sources=sources, previous=None, mode="live")
+    sources = [dict(id=p["key"], author=p["author"], text=p["text"], captured_at=p["at"], asset_ids=[p["asset"]] if p["asset"] else []) for p in json.loads(Path("tests/fixtures/posts.json").read_text())]
+    payload = dict(job=store.job("Create an English travel journal", "request"), sources=sources, previous=None, mode="live")
     documents = {"evidence": payload}
     sent = []
 
@@ -110,7 +110,7 @@ async def test_editor_can_correct_a_draft_before_final_validation(room):
     await start(w,"evidence",p,"thread")
     good=replay(p)
     bad=deepcopy(good)
-    bad["chapters"][0]["date"]="撮影日未確認"
+    bad["chapters"][0]["date"]="\u64ae\u5f71\u65e5\u672a\u78ba\u8a8d"
     bad["chapters"][0]["quote"]="unsupported quotation"
     docs["draft"]={"job_id":"request","album":bad}
     await receive(w,event("storyteller","MW_DRAFT"))
