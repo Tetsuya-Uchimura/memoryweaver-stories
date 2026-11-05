@@ -5,15 +5,27 @@ from contextlib import asynccontextmanager
 from agents.switch import Switch
 
 
+class SeedTranscript(Switch):
+    async def history(self):
+        from agents.switch import classify_history
+        entries=await super().history()
+        detail=await self.op('get_room_detail',room_id=self.room_id)
+        roster=[dict(name=n,type='user') for n in detail['connected_user_names']]+[dict(name=n,type='agent') for n in detail['agent_names']]
+        classify_history(entries,roster)
+        return entries
+
+
 @asynccontextmanager
-async def connected_collector(store):
-    state=store.get('switch');client=Switch(state['agents']['collector'],state['room_id'])
-    queue=asyncio.Queue();task=asyncio.create_task(client.listen(queue))
+async def collector_reader(store):
+    # read_context(room_id=...) supports an unbound caller in the official
+    # contract. Do not open another Collector SSE session: it could change
+    # event delivery/read accounting while the actual worker is consuming.
+    state=store.get('switch');client=SeedTranscript(state['agents']['collector'],state['room_id'])
     try:
-        await asyncio.wait_for(queue.get(),30)
+        await client.discover()
         yield client
     finally:
-        task.cancel();await asyncio.gather(task,return_exceptions=True);await client.http.aclose()
+        await client.http.aclose()
 
 
 async def confirm_post(client,body,photo=None,timeout=30):

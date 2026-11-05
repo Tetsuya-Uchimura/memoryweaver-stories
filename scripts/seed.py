@@ -109,8 +109,8 @@ async def world(args,root):
                     r=await http.post(route,headers=admin,json=data);r.raise_for_status()
                 hana=await login('hana',password)
                 try:
-                    from scripts.seed_sync import connected_collector,confirm_post
-                    async with connected_collector(child) as switch:
+                    from scripts.seed_sync import collector_reader,confirm_post
+                    async with collector_reader(child) as switch:
                         if not child.get('seed:complete'):
                             r=await http.post('/api/v4/posts',headers=human,json={"channel_id":channel,"message":"MemoryWeaver sample · FICTIONAL TRAVEL JOURNAL · Licensed landmark illustrations. Sample location pins are approximate fictional stops, NOT the photographer’s original GPS or proof of these travelers’ presence."});r.raise_for_status()
                             posts=definition['posts'];order=list(range(0,len(posts),2))[::-1]+list(range(1,len(posts),2))
