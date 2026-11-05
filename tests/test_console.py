@@ -116,7 +116,7 @@ async def test_editor_can_correct_a_draft_before_final_validation(room):
     await receive(w,event("storyteller","MW_DRAFT"))
     docs["review"]=dict(job_id="request",draft_document_id="draft",album=good,approved=True,notes=["Corrected date and quote against evidence"])
     await receive(w,event("editor","MW_REVIEW","review"))
-    assert w.store.revision()["album"]==good
+    assert w.store.revision()["album"]=={**good,"design":"classic"}
 
 
 async def test_binding_requires_internal_auth_and_waits_for_working_job(tmp_path,monkeypatch):

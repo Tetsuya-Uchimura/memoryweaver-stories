@@ -86,6 +86,45 @@
           "longitude": 135.785,
           "basis": "sample"
         }
+      },
+      {
+        "key": "kyoto-extra-gion",
+        "author": "hana",
+        "at": "2026-10-12T18:00:00+09:00",
+        "text": "We walked through Gion that evening. I wanted to keep the narrow street and its old wooden facades in our journal.",
+        "asset": "kyoto-gion",
+        "location": {
+          "name": "Gion, Kyoto",
+          "latitude": 35.0031,
+          "longitude": 135.7749,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "kyoto-extra-river",
+        "author": "traveler",
+        "at": "2026-10-13T16:00:00+09:00",
+        "text": "After the bamboo grove we stopped beside Togetsu-kyo Bridge. We watched the river before walking back together.",
+        "asset": "kyoto-river",
+        "location": {
+          "name": "Togetsu-kyo Bridge, Kyoto",
+          "latitude": 35.0136,
+          "longitude": 135.6776,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "kyoto-extra-hall",
+        "author": "hana",
+        "at": "2026-10-14T09:20:00+09:00",
+        "text": "Another photograph from our last stop at Kiyomizu-dera: the temple hall, framed by the trees. Please keep this view alongside the city panorama.",
+        "asset": "kyoto-hall",
+        "location": {
+          "name": "Kiyomizu-dera, Kyoto",
+          "latitude": 34.9949,
+          "longitude": 135.785,
+          "basis": "sample"
+        }
       }
     ]
   },
@@ -150,6 +189,58 @@
           "longitude": 2.3376,
           "basis": "sample"
         }
+      },
+      {
+        "key": "paris-extra-bridge",
+        "author": "hana",
+        "at": "2026-09-18T11:30:00+02:00",
+        "text": "We followed the Seine to Pont Alexandre III and stopped for this view of the bridge. Looking at the details became part of our walk.",
+        "asset": "paris-bridge",
+        "location": {
+          "name": "Pont Alexandre III, Paris",
+          "latitude": 48.8636,
+          "longitude": 2.3104,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "paris-extra-montmartre",
+        "author": "traveler",
+        "at": "2026-09-18T16:00:00+02:00",
+        "text": "Later we went up to Montmartre and stood outside Sacre-Coeur. I took this photograph to remember the building against the sky.",
+        "asset": "paris-montmartre",
+        "location": {
+          "name": "Sacre-Coeur, Paris",
+          "latitude": 48.8867,
+          "longitude": 2.3431,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "paris-extra-garden",
+        "author": "hana",
+        "at": "2026-09-19T12:00:00+02:00",
+        "text": "After the Louvre we walked through the Tuileries Garden. We found a place to pause and kept this photograph of the garden.",
+        "asset": "paris-garden",
+        "location": {
+          "name": "Tuileries Garden, Paris",
+          "latitude": 48.8635,
+          "longitude": 2.3275,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "paris-extra-notre-dame",
+        "author": "traveler",
+        "at": "2026-09-19T16:00:00+02:00",
+        "text": "We ended our walk outside Notre-Dame. This older licensed illustration stands in for the facade in our fictional travel journal; it is not a photograph taken on our sample travel date.",
+        "asset": "paris-notre-dame",
+        "location": {
+          "name": "Notre-Dame, Paris",
+          "latitude": 48.853,
+          "longitude": 2.3499,
+          "basis": "sample"
+        }
       }
     ]
   },
@@ -212,6 +303,58 @@
           "name": "Central Park, New York",
           "latitude": 40.774,
           "longitude": -73.971,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "new-york-extra-dumbo",
+        "author": "hana",
+        "at": "2026-08-22T12:00:00-04:00",
+        "text": "We walked through DUMBO and saw Manhattan Bridge framed by the buildings on Washington Street. Another angle on a city full of bridges.",
+        "asset": "new-york-dumbo",
+        "location": {
+          "name": "Washington Street, DUMBO, New York",
+          "latitude": 40.7033,
+          "longitude": -73.9896,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "new-york-extra-square",
+        "author": "traveler",
+        "at": "2026-08-22T18:00:00-04:00",
+        "text": "We reached Times Square later in the day. The signs and yellow taxis filled the view; this photograph belongs with our first day in the city.",
+        "asset": "new-york-square",
+        "location": {
+          "name": "Times Square, New York",
+          "latitude": 40.758,
+          "longitude": -73.9855,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "new-york-extra-terrace",
+        "author": "hana",
+        "at": "2026-08-23T11:00:00-04:00",
+        "text": "Still in Central Park, we stopped at Bethesda Terrace. I wanted to keep the stonework as well as the photograph beside the lake.",
+        "asset": "new-york-terrace",
+        "location": {
+          "name": "Bethesda Terrace, New York",
+          "latitude": 40.7736,
+          "longitude": -73.9711,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "new-york-extra-terminal",
+        "author": "traveler",
+        "at": "2026-08-23T16:00:00-04:00",
+        "text": "Our last photograph is from inside Grand Central Terminal. We paused in the concourse before leaving, looking up one more time.",
+        "asset": "new-york-terminal",
+        "location": {
+          "name": "Grand Central Terminal, New York",
+          "latitude": 40.7527,
+          "longitude": -73.9772,
           "basis": "sample"
         }
       }

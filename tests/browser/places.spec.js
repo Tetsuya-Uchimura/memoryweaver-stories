@@ -7,6 +7,8 @@ test('English world journeys, sourced photo places and local map pins',async({pa
   await page.goto('/?'+new URLSearchParams({trip}));
   await expect(page.locator('#trip-select')).toHaveValue(trip);
   await expect(page.locator('.cover-title')).toBeVisible();
+  await expect(page.locator('.book')).toHaveAttribute('data-design',({kyoto:'quiet',paris:'editorial','new-york':'urban'})[trip]);
+  expect(await page.locator('.chapter img').count()).toBeGreaterThanOrEqual(6);
   await expect(page.locator('.journey-places')).toContainText(place);
   await expect(page.locator('.photo-place').first()).toContainText('Fictional sample');
   await expect(page.locator('.location-sketch')).toBeVisible();

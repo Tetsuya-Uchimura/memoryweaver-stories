@@ -66,6 +66,24 @@
   },
   "additionalProperties": false,
   "properties": {
+    "design": {
+      "anyOf": [
+        {
+          "enum": [
+            "classic",
+            "quiet",
+            "editorial",
+            "urban"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Design"
+    },
     "title": {
       "maxLength": 160,
       "minLength": 1,

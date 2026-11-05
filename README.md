@@ -135,9 +135,9 @@ This creates three separate private, English-language conversations and finished
 
 | Journal | Mattermost channel | Fictional sample |
 | --- | --- | --- |
-| Kyoto, Japan (default) | `kyoto-travel-journal` | 6 memories, 3 photos: Fushimi Inari, Arashiyama bamboo grove, Kiyomizu-dera |
-| Paris, France | `paris-travel-journal` | 4 memories, 2 photos: Eiffel Tower / Seine and Louvre Pyramid |
-| New York, United States | `new-york-travel-journal` | 4 memories, 2 photos: Brooklyn Bridge and Central Park |
+| Kyoto, Japan (default) | `kyoto-travel-journal` | 9 memories, 6 photos: Fushimi Inari, Gion, Arashiyama bamboo / river, two Kiyomizu-dera views |
+| Paris, France | `paris-travel-journal` | 8 memories, 6 photos: Eiffel Tower / Seine, Pont Alexandre III, Montmartre, Louvre, Tuileries, Notre-Dame |
+| New York, United States | `new-york-travel-journal` | 8 memories, 6 photos: Brooklyn Bridge, DUMBO, Times Square, Central Park, Bethesda Terrace, Grand Central |
 
 Posts arrive out of order from **traveler** and **hana**. Before requesting a fixture book, the seed helper waits for Switch to acknowledge each post and the exact photo bytes; an incomplete handoff stops visibly instead of silently omitting a memory. The place pins are explicitly marked as approximate fictional landmarks, not original camera GPS. The initial books are deterministic fixtures, not claimed native inference. `seed --all` does not duplicate the posts; adding `--generate` explicitly requests new replay editions. Choose a book with **Your journals** in the sidebar.
 
@@ -146,7 +146,7 @@ Now request a real native generation in the Kyoto channel:
 In **Mattermost → memoryweaver → kyoto-travel-journal**, send:
 
 ```text
-@mw-collector Make an English travel journal of our Kyoto trip. Keep all six memories, all three photos and the supplied sample locations. Do not publish.
+@mw-collector Make an English travel journal of our Kyoto trip. Keep all nine memories, all six photos and the supplied sample locations. Do not publish.
 ```
 
 Kyoto is the default judge journey. Use the same request in another trip’s channel to generate that trip independently; sources, drafts, versions and PDF deliveries are scoped to that room.
@@ -243,6 +243,45 @@ python3 scripts/dev.py seed --message '@mw-collector 今回の京都旅行をア
 In live mode, Storyteller calls **Claude Code** with a structured album schema; Editor calls **Codex** with a separate structured editorial review. Collector and Publisher are deterministic tool agents. Optional `CLAUDE_MODEL` and `CODEX_MODEL` settings let you select models your accounts can access; otherwise the authenticated CLIs choose their defaults. Live results are never silently replaced by replay output.
 
 The container-CLI option uses custom Switch workers. Switch Console is optional for that path and required for the GUI-first path above. Neither option bypasses provider authentication.
+
+## A different design for each journey
+
+Each starter book includes **six distinct licensed photographs**, supplied by real sample Mattermost posts, with captions and approximate fictional locations. Six is the fixture size, **not an application photo limit**. Additional user uploads follow the same Collector → Switch documents → Storyteller → Editor → Publisher path.
+
+| Journey | Art direction | Web layout |
+| --- | --- | --- |
+| Kyoto | `quiet` · paper, ink and vermilion | Split cover, generous margins, staggered photo pairs and reflective prose |
+| Paris | `editorial` · ivory and burgundy | Magazine masthead, inset cover image and photo essays |
+| New York | `urban` · charcoal, cobalt and taxi yellow | Bold sans-serif cover, contact-sheet image grid and large chapter numbers |
+
+Storyteller can choose `album.design` from these recipes or the neutral `classic` recipe; Editor reviews it with the draft through Switch. If a client omits it, Publisher selects a recipe from the supplied destination and cited place names. It never accepts arbitrary model HTML, CSS, scripts or remote fonts. Recipes change presentation, not factual memories. The chosen recipe is saved in the edition and included in the exact-version publication digest. The PDF and sanitized static export use that same recipe. Earlier editions without a recipe retain the classic layout; already delivered PDF bytes are preserved.
+
+Ask in Mattermost, for example:
+
+```text
+@mw-collector Redesign this journal as an editorial travel magazine. Choose the editorial design recipe. Keep every photograph, original memory and supplied location. Do not publish.
+```
+
+This creative instruction uses live authenticated collaborators. The deterministic Replay Demo preserves an existing recipe on ordinary edits and selects a destination recipe for a new book; it does not interpret arbitrary design instructions.
+
+### Upgrade an existing local environment
+
+From your checkout, pull the updated source, rebuild, and add the missing fixture posts:
+
+```sh
+git pull --ff-only
+python3 scripts/dev.py up
+python3 scripts/console.py prepare
+python3 scripts/dev.py seed --all
+```
+
+`seed --all` checks per-post receipts and adds only missing sample memories/photos, including when the room was seeded by an earlier release. It does **not** replace previous books or automatically generate a new one. Keep Console running, then send this request in each trip's Mattermost channel:
+
+```text
+@mw-collector Update the English travel journal with every photograph and memory in this room. Choose a design that fits this journey. Preserve the existing cover, dates and locations. Do not publish.
+```
+
+Wait for Publisher's new completion post and PDF. Open the latest book with the journal selector; an older completion link deliberately stays pinned to its original edition. In a replay-only judge environment, `python3 scripts/dev.py seed --all --generate` creates the updated demonstration editions instead. Existing private Okinawa uploads remain in their original journal.
 
 ## Locations and photo capture places
 

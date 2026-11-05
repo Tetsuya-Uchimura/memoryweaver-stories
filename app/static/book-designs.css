@@ -1,0 +1,145 @@
+/* Art direction belongs to the edition, while the studio remains familiar. */
+.book[data-design]{--book-ink:#263d34;--book-accent:#315849;color:var(--book-ink)}
+.book[data-design] .cover-title,.book[data-design] .chapter h2{overflow-wrap:anywhere}
+.book[data-design] .chapter-images{min-width:0}
+.book[data-design] .chapter-prose{min-width:0}
+.book[data-design]:not([data-design=classic]) .chapter-images img{object-fit:contain;background:#eceae4}
+.book[data-design] .chapter-images figcaption{line-height:1.8}
+.book[data-design] .photo-place{margin-top:10px}
+.book[data-design] .book-caption{flex-wrap:wrap;gap:5px}
+/* Kyoto: an open, washi-colored field journal, image and type side by side. */
+.book[data-design=quiet]{--book-ink:#303b35;--book-accent:#a74332;background:#f5f0e5;border-color:#dfd5c2}
+.book[data-design=quiet] .cover{background:#f5f0e5;color:#303b35;min-height:620px;justify-content:center}
+.book[data-design=quiet] .cover:after{display:none}
+.book[data-design=quiet] .cover>img{left:auto;right:0;width:54%;height:100%;object-fit:cover;z-index:0}
+.book[data-design=quiet] .cover-top{color:#873b2e;z-index:2;left:35px;right:auto;width:34%;font-size:8px;letter-spacing:2px;line-height:2}
+.book[data-design=quiet] .cover-seal{background:#a74332;color:#fff;width:31px;height:38px;display:grid;place-items:center;border-radius:0;margin-top:10px}
+.book[data-design=quiet] .cover-content{position:relative;padding:115px 34px 45px;width:46%;z-index:1}
+.book[data-design=quiet] .cover-location{color:#8a4939;letter-spacing:2px;font-size:10px}
+.book[data-design=quiet] .cover-title{font:400 clamp(30px,3.2vw,51px)/1.25 var(--serif);letter-spacing:-1px;margin:27px 0 25px}
+.book[data-design=quiet] .cover-subtitle{font:13px/1.9 var(--serif);letter-spacing:0;color:#6b7164}
+.book[data-design=quiet] .cover-bottom{border-color:#bcb19d;color:#646b60;display:block;font-size:8px;letter-spacing:.5px;margin-top:35px}
+.book[data-design=quiet] .cover-bottom span{display:block;margin-top:8px;font:italic 12px var(--serif)}
+.book[data-design=quiet] .book-caption{background:#eee6d7;color:#785a47;border-color:#ddd1bb}
+.book[data-design=quiet] .intro{padding:75px 12%;text-align:left;background:repeating-linear-gradient(0deg,#7a655504 0px,#7a655504 1px,transparent 1px,transparent 5px)}
+.book[data-design=quiet] .intro h2{font:400 35px/1.4 var(--serif);color:#394438;max-width:400px}
+.book[data-design=quiet] .ornament{color:#a74332}
+.book[data-design=quiet] .journey-index{justify-content:flex-start}
+.book[data-design=quiet] .chapter{padding:65px 7%;border-top:1px solid #ddd3c0}
+.book[data-design=quiet] .chapter-number{color:#a74332;border-color:#d5c8b1}
+.book[data-design=quiet] .chapter-layout{display:block;direction:ltr}
+.book[data-design=quiet] .chapter-images:has(figure:nth-child(2)){grid-template-columns:1.45fr 1fr;align-items:start;gap:24px}
+.book[data-design=quiet] .chapter-images img,.book[data-design=quiet] .chapter-images:has(figure:nth-child(2)) img{height:340px}
+.book[data-design=quiet] .chapter-images figure:nth-child(even){padding-top:50px}
+.book[data-design=quiet] .chapter-prose{max-width:640px;margin:35px 0 0 18%}
+.book[data-design=quiet] .chapter-prose p{color:#505f50;font-size:15px;letter-spacing:.2px}
+.book[data-design=quiet] blockquote{color:#92513c;border-color:#bd7d5c}
+.book[data-design=quiet] .book-end{background:#e9e0cf;border-top:1px solid #d9cdb5}
+.book[data-design=quiet] .book-end .weave{color:#a74332}
+/* Paris: a magazine masthead, inset cover photograph and editorial photo essays. */
+.book[data-design=editorial]{--book-ink:#32262b;--book-accent:#8d344a;background:#fffaf3;border-color:#d8c9c3}
+.book[data-design=editorial] .cover{color:#32262b;background:#fffaf3;min-height:0;justify-content:flex-start}
+.book[data-design=editorial] .cover:after{display:none}
+.book[data-design=editorial] .cover-top{top:25px;left:45px;right:45px;color:#8d344a;border-bottom:1px solid #bca7a0;padding-bottom:10px;z-index:1;font-size:9px}
+.book[data-design=editorial] .cover-seal{font-size:24px}
+.book[data-design=editorial] .cover-content{order:1;position:relative;padding:85px 45px 0;text-align:center}
+.book[data-design=editorial] .cover-location{color:#8d344a;letter-spacing:3px;font-size:9px}
+.book[data-design=editorial] .cover-title{font:400 clamp(40px,5vw,76px)/1.04 Georgia,serif;letter-spacing:-3px;margin:19px 0}
+.book[data-design=editorial] .cover-subtitle{font:italic 16px/1.6 Georgia,serif;color:#79616a;letter-spacing:0;max-width:530px;margin:auto}
+.book[data-design=editorial] .cover-bottom{margin-top:21px;border:0;color:#79616a;justify-content:center;font:10px/1.7 var(--sans);gap:15px;padding-top:0}
+.book[data-design=editorial] .cover>img{position:relative;order:2;width:calc(100% - 90px);height:420px;margin:26px 45px 37px;object-fit:contain;background:#f2e9e1;z-index:0}
+.book[data-design=editorial] .book-caption{background:#8d344a;color:#fffaf3;border:0}
+.book[data-design=editorial] .intro{padding:60px 13%;background:#fffaf3}
+.book[data-design=editorial] .intro h2{font:italic 38px/1.3 Georgia,serif;color:#69394a}
+.book[data-design=editorial] .ornament{color:#8d344a}
+.book[data-design=editorial] .journey-places{background:#f4ebe5}
+.book[data-design=editorial] .journey-places h2{color:#69394a;font-style:italic}
+.book[data-design=editorial] .chapter{padding:55px 6%;border-top:1px solid #d8c9c3}
+.book[data-design=editorial] .chapter h2{font:italic 32px/1.25 Georgia,serif;color:#69394a;letter-spacing:-.5px}
+.book[data-design=editorial] .chapter-number{font:italic 56px Georgia,serif;color:#a56a77;border-color:#d8c9c3}
+.book[data-design=editorial] .chapter-layout{display:block;direction:ltr}
+.book[data-design=editorial] .chapter-images{grid-template-columns:1fr 1fr;gap:18px}
+.book[data-design=editorial] .chapter-images figure:first-child{grid-column:1/-1}
+.book[data-design=editorial] .chapter-images img,.book[data-design=editorial] .chapter-images:has(figure:nth-child(2)) img{height:300px}
+.book[data-design=editorial] .chapter-images figure:first-child img{height:440px}
+.book[data-design=editorial] .chapter-prose{margin-top:32px;columns:2;column-gap:32px}
+.book[data-design=editorial] .chapter-prose p{color:#57444b;font:15px/2 Georgia,serif;letter-spacing:0}
+.book[data-design=editorial] blockquote{break-inside:avoid;color:#8d344a;border-color:#bc8e99;font-family:Georgia,serif}
+.book[data-design=editorial] .book-end{background:#efe1df}
+.book[data-design=editorial] .book-end p{color:#69394a;font-style:italic}
+/* New York: a bold city edition with a wide cover and contact-sheet grid. */
+.book[data-design=urban]{--book-ink:#1c2631;--book-accent:#254cc4;background:#f3f3ef;border:2px solid #1c2631;box-shadow:7px 7px 0 #1c263120;font-family:var(--sans)}
+.book[data-design=urban] .cover{background:#182330;color:#fff;min-height:0;justify-content:flex-start}
+.book[data-design=urban] .cover:after{display:none}
+.book[data-design=urban] .cover-top{top:22px;left:32px;right:32px;font:10px/1.6 var(--sans);letter-spacing:2px}
+.book[data-design=urban] .cover-seal{color:#f5cb43}
+.book[data-design=urban] .cover-content{position:relative;order:1;padding:82px 32px 30px}
+.book[data-design=urban] .cover-location{display:inline-block;background:#f5cb43;color:#182330;padding:4px 10px;font:700 10px/1.5 var(--sans);letter-spacing:2px}
+.book[data-design=urban] .cover-title{font:800 clamp(42px,5vw,76px)/.99 var(--sans);text-transform:uppercase;letter-spacing:-3px;margin:25px 0 22px;max-width:720px}
+.book[data-design=urban] .cover-subtitle{font:14px/1.7 var(--sans);color:#d0d7e0;letter-spacing:0;max-width:540px}
+.book[data-design=urban] .cover-bottom{border-color:#ffffff44;font:9px/1.7 var(--sans);letter-spacing:1px;margin-top:25px}
+.book[data-design=urban] .cover>img{position:relative;order:2;width:100%;height:380px;object-fit:cover;z-index:0}
+.book[data-design=urban] .book-caption{background:#f5cb43;color:#182330;border:0;font-weight:700}
+.book[data-design=urban] .intro{padding:48px 6%;text-align:left;background:#254cc4;color:white}
+.book[data-design=urban] .intro .eyebrow,.book[data-design=urban] .intro p{color:#e6ebff}
+.book[data-design=urban] .intro h2{font:800 39px/1.1 var(--sans);max-width:480px;color:#fff;letter-spacing:-1.5px}
+.book[data-design=urban] .ornament{display:none}
+.book[data-design=urban] .journey-index{justify-content:flex-start}
+.book[data-design=urban] .journey-index a,.book[data-design=urban] .journey-index span{color:#fff}
+.book[data-design=urban] .journey-places{background:#e6eaf0;border-bottom:2px solid #1c2631}
+.book[data-design=urban] .journey-places h2{font:800 30px var(--sans);color:#1c2631;letter-spacing:-1px}
+.book[data-design=urban] .chapter{padding:42px 5%;border-top:2px solid #1c2631}
+.book[data-design=urban] .chapter-heading{align-items:flex-start}
+.book[data-design=urban] .chapter-number{font:800 76px/.9 var(--sans);color:#254cc4;border:0;padding-right:0;letter-spacing:-5px}
+.book[data-design=urban] .chapter h2{font:800 28px/1.25 var(--sans);color:#1c2631;letter-spacing:-1px;margin-top:8px}
+.book[data-design=urban] .chapter-date{font-weight:700;color:#536779}
+.book[data-design=urban] .chapter-layout{display:block;direction:ltr}
+.book[data-design=urban] .chapter-images:has(figure:nth-child(2)){grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.book[data-design=urban] .chapter-images img,.book[data-design=urban] .chapter-images:has(figure:nth-child(2)) img{height:280px;background:#dbe0e5}
+.book[data-design=urban] .chapter-prose{margin-top:25px;border-top:2px solid #1c2631;padding-top:22px}
+.book[data-design=urban] .chapter-prose p{font:14px/1.9 var(--sans);color:#35495a;letter-spacing:0;columns:2;column-gap:28px}
+.book[data-design=urban] .chapter-prose blockquote{font:700 21px/1.5 var(--sans);color:#254cc4;border-color:#f5cb43}
+.book[data-design=urban] .book-end{background:#182330;color:#fff}
+.book[data-design=urban] .book-end p{font:800 30px/1.1 var(--sans);color:#fff;letter-spacing:-1px}
+.book[data-design=urban] .book-end .weave{color:#f5cb43}
+@media(max-width:760px){
+ .book[data-design=quiet] .cover{min-height:550px}
+ .book[data-design=quiet] .cover>img{width:45%}
+ .book[data-design=quiet] .cover-content{width:55%;padding:100px 18px 28px}
+ .book[data-design=quiet] .cover-top{left:18px;width:42%;top:22px;font-size:7px;letter-spacing:1px}
+ .book[data-design=quiet] .cover-title{font-size:31px;line-height:1.2;letter-spacing:-1px}
+ .book[data-design=quiet] .cover-subtitle{font-size:12px;line-height:1.6}
+ .book[data-design=quiet] .cover-bottom{font-size:7px;margin-top:22px}
+ .book[data-design=quiet] .intro,.book[data-design=quiet] .chapter{padding:38px 22px}
+ .book[data-design=quiet] .intro h2{font-size:29px}
+ .book[data-design=quiet] .chapter-images:has(figure:nth-child(2)){grid-template-columns:1fr;gap:20px}
+ .book[data-design=quiet] .chapter-images figure:nth-child(even){padding-top:0}
+ .book[data-design=quiet] .chapter-images img,.book[data-design=quiet] .chapter-images:has(figure:nth-child(2)) img{height:300px}
+ .book[data-design=quiet] .chapter-prose{margin:26px 0 0}
+ .book[data-design=editorial] .cover-top{left:22px;right:22px;font-size:7px}
+ .book[data-design=editorial] .cover-content{padding:85px 22px 0}
+ .book[data-design=editorial] .cover-title{font-size:46px;letter-spacing:-2px}
+ .book[data-design=editorial] .cover-subtitle{font-size:14px}
+ .book[data-design=editorial] .cover-bottom{font-size:8px;display:block}
+ .book[data-design=editorial] .cover-bottom span{display:block;margin-top:6px}
+ .book[data-design=editorial] .cover>img{width:calc(100% - 44px);height:300px;margin:22px}
+ .book[data-design=editorial] .intro,.book[data-design=editorial] .chapter{padding:38px 22px}
+ .book[data-design=editorial] .intro h2{font-size:30px}
+ .book[data-design=editorial] .chapter-images{grid-template-columns:1fr!important}
+ .book[data-design=editorial] .chapter-images img,.book[data-design=editorial] .chapter-images:has(figure:nth-child(2)) img,.book[data-design=editorial] .chapter-images figure:first-child img{height:300px}
+ .book[data-design=editorial] .chapter-prose{columns:1}
+ .book[data-design=editorial] .chapter h2{font-size:26px}
+ .book[data-design=urban] .cover-top{left:22px;right:22px;font-size:8px}
+ .book[data-design=urban] .cover-content{padding:77px 22px 25px}
+ .book[data-design=urban] .cover-title{font-size:46px;letter-spacing:-2px}
+ .book[data-design=urban] .cover-subtitle{font-size:13px}
+ .book[data-design=urban] .cover-bottom{font-size:7px;gap:12px}
+ .book[data-design=urban] .cover>img{height:300px}
+ .book[data-design=urban] .intro,.book[data-design=urban] .chapter{padding:35px 22px}
+ .book[data-design=urban] .intro h2{font-size:32px}
+ .book[data-design=urban] .chapter-images:has(figure:nth-child(2)){grid-template-columns:1fr}
+ .book[data-design=urban] .chapter-prose p{columns:1}
+ .book[data-design=urban] .chapter-number{font-size:60px}
+ .book[data-design=urban] .chapter h2{font-size:23px}
+ .book[data-design] .journey-index{flex-wrap:wrap;gap:18px}
+}

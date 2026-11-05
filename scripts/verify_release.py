@@ -22,7 +22,7 @@ def verify(root):
     names = {str(p.relative_to(root)) for p in root.rglob("*") if p.is_file()}
     assert names == set(manifest["files"]) | {"release.json"}, "Unreviewed file in export"
     for name, digest in manifest["files"].items():
-        assert name in required or re.fullmatch(r"assets/[a-z0-9-]+\.jpg", name), "File is not on the publication allowlist"
+        assert name in required | {"book-designs.css"} or re.fullmatch(r"assets/[a-z0-9-]+\.jpg", name), "File is not on the publication allowlist"
         path = root / name
         assert not path.is_symlink() and path.resolve().is_relative_to(root.resolve())
         assert hashlib.sha256(path.read_bytes()).hexdigest() == digest, "Export bytes changed after approval"

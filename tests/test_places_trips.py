@@ -83,7 +83,7 @@ async def test_trip_books_locations_and_version_ids_are_isolated(tmp_path,monkey
 
 def test_location_snapshot_pdf_and_public_consent_are_version_bound(tmp_path):
     root=Store(tmp_path);store=make_book(root,'kyoto');revision=store.revision()
-    assert len(revision['photo_locations'])==3
+    assert len(revision['photo_locations'])==6
     original=deepcopy(revision['photo_locations'])
     asset=store.all('assets')[0];asset['location']=dict(name='Changed later',latitude=1,longitude=2,basis='stated');store.put('assets',asset)
     assert store.revision()['photo_locations']==original
@@ -128,3 +128,37 @@ async def test_legacy_version_links_and_runtime_binding_respect_trip_jobs(tmp_pa
         kyoto.job('active','active')
         binding=dict(storyteller=dict(id='a',name='writer'),editor=dict(id='b',name='reviewer'))
         assert (await h.post('/internal/console',headers={'Authorization':'Bearer secret-test-only'},json=binding)).status_code==409
+
+
+@pytest.mark.parametrize('tid,design',[('kyoto','quiet'),('paris','editorial'),('new-york','urban')])
+def test_richer_books_have_six_distinct_sourced_photos_and_art_direction(tmp_path,tid,design):
+    from agents.artifacts import render_artifacts
+    from scripts.verify_release import verify
+    root=Store(tmp_path);store=make_book(root,tid);r=store.revision()
+    ids={aid for c in r['album']['chapters'] for aid in c['asset_ids']}
+    assert len(ids)==6 and len(r['photo_locations'])==6
+    assert r['album']['design']==design
+    assert all(a.startswith(tid+'-') for a in ids)
+    assets={a['id']:a for a in store.all('assets')}
+    # Actual PDFs exercise the recipe, fonts, selected photos and private fetcher.
+    pdf,cover,manifest=render_artifacts(store,r)
+    assert pdf.read_bytes().startswith(b'%PDF-') and pdf.stat().st_size>20000
+    assert f'data-design="{design}"' in pdf_html(r,assets)
+    destination,files=build_export(store,r,{'user_id':'traveler','created':0})
+    assert f'data-design="{design}"'.encode() in files['index.html']
+    assert b'book-designs.css' in files['index.html']
+    verify(destination)
+
+
+def test_recipe_is_immutable_and_changes_invalidate_exact_version_consent(tmp_path):
+    root=Store(tmp_path);store=make_book(root,'paris');old=store.revision()
+    revised=deepcopy(old['album']);revised['design']='quiet'
+    job=store.job('Use a quiet photo book layout','change-style')
+    store.commit(revised,job['id'],'replay',old['sources'])
+    assert store.revision(old['version'])['album']['design']=='editorial'
+    assert store.revision()['album']['design']=='quiet'
+    tampered=deepcopy(old);tampered['album']['design']='urban'
+    assert publication_digest(old)!=publication_digest(tampered)
+    with pytest.raises(ValueError):
+        from app.models import Album
+        Album.model_validate({**old['album'],'design':'<script>alert(1)</script>'})

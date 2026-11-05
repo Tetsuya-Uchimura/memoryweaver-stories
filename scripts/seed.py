@@ -113,26 +113,25 @@ async def world(args,root):
                     async with collector_reader(child) as switch:
                         if not child.get('seed:complete'):
                             r=await http.post('/api/v4/posts',headers=human,json={"channel_id":channel,"message":"MemoryWeaver sample · FICTIONAL TRAVEL JOURNAL · Licensed landmark illustrations. Sample location pins are approximate fictional stops, NOT the photographer’s original GPS or proof of these travelers’ presence."});r.raise_for_status()
-                            posts=definition['posts'];order=list(range(0,len(posts),2))[::-1]+list(range(1,len(posts),2))
-                            for i in order:
-                                p=posts[i]
-                                existing=child.get('seed:post:'+p['key'])
-                                if existing:
-                                    r=await http.get('/api/v4/posts/'+existing,headers=human);r.raise_for_status()
-                                    await confirm_post(switch,r.json()['message'],(Path('app/static/assets')/(p['asset']+'.jpg')).read_bytes() if p['asset'] else None)
-                                    continue
-                                headers=human if p['author']=='traveler' else hana;files=[]
-                                if p['asset']:
-                                    image=Path('app/static/assets')/(p['asset']+'.jpg')
-                                    r=await http.post('/api/v4/files',headers=headers,data={"channel_id":channel},files={"files":(image.name,image.read_bytes(),'image/jpeg')});r.raise_for_status();files=[f['id'] for f in r.json()['file_infos']]
-                                place=p['location'];annotation=f"[Sample location: {place['name']} | {place['latitude']},{place['longitude']}]"
-                                body="["+p['at']+"] "+annotation+"\n"+p['text']
-                                r=await http.post('/api/v4/posts',headers=headers,json={"channel_id":channel,"message":body,"file_ids":files});r.raise_for_status()
-                                child.set('seed:post:'+p['key'],r.json()['id'])
-                                await confirm_post(switch,body,image.read_bytes() if p['asset'] else None)
-                            child.set('seed:complete',True)
-                            print('Seeded '+tid+' with '+str(len(posts))+' English memories',flush=True)
-                        else:print(tid+': sample already posted; no duplicates',flush=True)
+                        posts=definition['posts'];order=[i for i,p in enumerate(posts) if p['asset']][::-1]+[i for i,p in enumerate(posts) if not p['asset']]
+                        for i in order:
+                            p=posts[i]
+                            existing=child.get('seed:post:'+p['key'])
+                            if existing:
+                                r=await http.get('/api/v4/posts/'+existing,headers=human);r.raise_for_status()
+                                await confirm_post(switch,r.json()['message'],(Path('app/static/assets')/(p['asset']+'.jpg')).read_bytes() if p['asset'] else None)
+                                continue
+                            headers=human if p['author']=='traveler' else hana;files=[]
+                            if p['asset']:
+                                image=Path('app/static/assets')/(p['asset']+'.jpg')
+                                r=await http.post('/api/v4/files',headers=headers,data={"channel_id":channel},files={"files":(image.name,image.read_bytes(),'image/jpeg')});r.raise_for_status();files=[f['id'] for f in r.json()['file_infos']]
+                            place=p['location'];annotation=f"[Sample location: {place['name']} | {place['latitude']},{place['longitude']}]"
+                            body="["+p['at']+"] "+annotation+"\n"+p['text']
+                            r=await http.post('/api/v4/posts',headers=headers,json={"channel_id":channel,"message":body,"file_ids":files});r.raise_for_status()
+                            child.set('seed:post:'+p['key'],r.json()['id'])
+                            await confirm_post(switch,body,image.read_bytes() if p['asset'] else None)
+                        child.set('seed:complete',True)
+                        print(tid+': '+str(len(posts))+' English memories checked; missing posts added without duplicates',flush=True)
                         if args.generate:
                             for source_post in definition['posts']:
                                 posted_id=child.get('seed:post:'+source_post['key'])

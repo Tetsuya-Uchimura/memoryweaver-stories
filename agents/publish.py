@@ -42,7 +42,7 @@ def build_export(store, revision, approval):
     assets = {a["id"]: a for a in store.all("assets")}
     ids = selected_assets(revision)
     book = public_book(revision)
-    files = {"style.css": (static / "style.css").read_bytes(), "book.json": canonical(book)}
+    files = {"book-designs.css": (static / "book-designs.css").read_bytes(), "style.css": (static / "style.css").read_bytes(), "book.json": canonical(book)}
     for asset_id in ids:
         asset = assets[asset_id]
         if asset.get("sample"):
@@ -57,6 +57,8 @@ def build_export(store, revision, approval):
         if hashlib.sha256(contents).hexdigest() != revision.get("asset_hashes", {}).get(asset_id):
             raise ValueError("Photograph bytes differ from the reviewed version; regenerate and review a new preview")
         files["assets/" + asset_id + ".jpg"] = contents
+    from app.design import DESIGNS
+    design = book.get("design") if book.get("design") in DESIGNS else "classic"
     e = html.escape
     image = lambda aid: "assets/" + aid + ".jpg"
     from app.locations import map_url
@@ -71,7 +73,7 @@ def build_export(store, revision, approval):
     places=""
     if book.get('places'):
         places='<section class="journey-places"><h2>Places we remember</h2>'+''.join('<p><a href="'+e(map_url(p))+'">'+e(p['name'])+'</a> · '+e(p['basis'])+'</p>' for p in book['places'])+'</section>'
-    doc = f'''<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>{e(book["title"])} · MemoryWeaver</title><link rel="stylesheet" href="style.css"></head><body class="reading"><main><article class="book"><section class="cover"><img src="{image(book["cover_asset_id"])}" alt="Travel journal cover"><div class="cover-top">A MEMORYWEAVER TRAVEL JOURNAL · V{revision["version"]}</div><div class="cover-content"><div class="cover-location">{e(book["location"])}</div><h1 class="cover-title">{e(book["title"])}</h1><div class="cover-subtitle">{e(book["subtitle"])}</div><div class="cover-bottom">{e(book["date_label"])}</div></div></section>{places}{''.join(chapters)}<div class="book-end"><span class="weave">✳</span><p>思い出は、これからも。</p><small>WOVEN TOGETHER WITH MEMORYWEAVER · {e(revision["mode"].upper())}</small></div></article><footer class="photo-credit">{credits}<p>Sample photographs illustrate a fictional trip. Published with explicit human approval.</p></footer></main></body></html>'''
+    doc = f'''<!doctype html><html lang="{e(revision.get("language","ja"))}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>{e(book["title"])} · MemoryWeaver</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="book-designs.css"></head><body class="reading"><main><article class="book" data-design="{design}"><section class="cover"><img src="{image(book["cover_asset_id"])}" alt="Travel journal cover"><div class="cover-top">A MEMORYWEAVER TRAVEL JOURNAL · V{revision["version"]}</div><div class="cover-content"><div class="cover-location">{e(book["location"])}</div><h1 class="cover-title">{e(book["title"])}</h1><div class="cover-subtitle">{e(book["subtitle"])}</div><div class="cover-bottom">{e(book["date_label"])}</div></div></section>{places}{''.join(chapters)}<div class="book-end"><span class="weave">✳</span><p>Some journeys stay with us.</p><small>WOVEN TOGETHER WITH MEMORYWEAVER · {e(revision["mode"].upper())}</small></div></article><footer class="photo-credit">{credits}<p>Sample photographs illustrate a fictional trip. Published with explicit human approval.</p></footer></main></body></html>'''
     files["index.html"] = doc.encode()
     files["_headers"] = b"/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: no-referrer\n  Content-Security-Policy: default-src 'none'; img-src 'self'; style-src 'self'; base-uri 'none'; frame-ancestors 'none'\n"
     manifest = {"schema": 1, "version": revision["version"], "digest": publication_digest(revision), "asset_ids": ids, "asset_hashes": revision["asset_hashes"], "book": book, "consent": CONSENT, "approved_at": approval["created"], "approver_hash": hashlib.sha256(approval["user_id"].encode()).hexdigest(), "files": {p: hashlib.sha256(b).hexdigest() for p, b in files.items()}}

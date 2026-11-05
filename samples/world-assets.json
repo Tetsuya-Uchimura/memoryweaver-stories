@@ -1,5 +1,104 @@
 [
   {
+    "id": "kyoto-river",
+    "url": "/static/assets/kyoto-river.jpg",
+    "label": "Togetsu-kyō bridge at golden hour, Kyoto, Japan.jpg",
+    "sample": true,
+    "credit": "Basile Morin · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Togetsu-ky%C5%8D%20bridge%20at%20golden%20hour%2C%20Kyoto%2C%20Japan.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "kyoto-gion",
+    "url": "/static/assets/kyoto-gion.jpg",
+    "label": "A view of Gion corner in Geisha district, Kyoto, Japan.jpg",
+    "sample": true,
+    "credit": "Joli Rumi · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:A%20view%20of%20Gion%20corner%20in%20Geisha%20district%2C%20Kyoto%2C%20Japan.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "kyoto-hall",
+    "url": "/static/assets/kyoto-hall.jpg",
+    "label": "JAP Kyoto Kiyomizu-dera.jpg",
+    "sample": true,
+    "credit": "Grueslayer @Wikipedia · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:JAP%20Kyoto%20Kiyomizu-dera.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "paris-bridge",
+    "url": "/static/assets/paris-bridge.jpg",
+    "label": "The Pont Alexandre III Paris.jpg",
+    "sample": true,
+    "credit": "Martin Davison / EUtouring.com · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:The%20Pont%20Alexandre%20III%20Paris.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "paris-montmartre",
+    "url": "/static/assets/paris-montmartre.jpg",
+    "label": "Paris-Sacré-Cœur-106-2017-gje.jpg",
+    "sample": true,
+    "credit": "Gerd Eichmann · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Paris-Sacr%C3%A9-C%C5%93ur-106-2017-gje.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "paris-garden",
+    "url": "/static/assets/paris-garden.jpg",
+    "label": "Paris-Tuileries-110-2017-gje.jpg",
+    "sample": true,
+    "credit": "Gerd Eichmann · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Paris-Tuileries-110-2017-gje.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "paris-notre-dame",
+    "url": "/static/assets/paris-notre-dame.jpg",
+    "label": "Notre-dame-de-paris.jpg",
+    "sample": true,
+    "credit": "Nicolas barthe · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Notre-dame-de-paris.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "new-york-square",
+    "url": "/static/assets/new-york-square.jpg",
+    "label": "The iconic Times square.jpg",
+    "sample": true,
+    "credit": "Henrybermudez1 · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:The%20iconic%20Times%20square.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "new-york-terminal",
+    "url": "/static/assets/new-york-terminal.jpg",
+    "label": "Grand Central Terminal, New York.jpg",
+    "sample": true,
+    "credit": "Clément Bardot · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Grand%20Central%20Terminal%2C%20New%20York.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "new-york-terrace",
+    "url": "/static/assets/new-york-terrace.jpg",
+    "label": "Bethesda Terrace.jpg",
+    "sample": true,
+    "credit": "Jon McIntosh · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Bethesda%20Terrace.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "new-york-dumbo",
+    "url": "/static/assets/new-york-dumbo.jpg",
+    "label": "Dumbo.jpg",
+    "sample": true,
+    "credit": "Lingzhong93 · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Dumbo.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
     "id": "kyoto-gates",
     "url": "/static/assets/kyoto-gates.jpg",
     "label": "Fushimi Inari Taisha Torii entrance.jpg",

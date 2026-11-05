@@ -11,7 +11,7 @@ import tempfile
 
 from agents.publish import publication_digest, selected_assets
 
-TEMPLATE_VERSION = "private-pdf-v3-locations"
+TEMPLATE_VERSION = "private-pdf-v4-art-direction"
 
 
 def album_base_url():
@@ -71,14 +71,17 @@ def pdf_html(revision, assets):
     album = revision["album"]
     version = revision["version"]
     image = lambda asset_id: "https://memoryweaver.invalid/photos/" + asset_id + ".jpg"
+    from app.design import DESIGNS
+    design = album.get("design") if album.get("design") in DESIGNS else "classic"
+    columns = 3 if design == "urban" else 2
     chapters = []
     from app.locations import map_url
     photo_places=revision.get("photo_locations",{})
     sources = {s["id"]: s for s in revision["sources"]}
     for chapter in album["chapters"]:
         figures = []
-        for start in range(0, len(chapter["asset_ids"]), 2):
-            cells = ''.join('<td><img alt="Travel photograph" src="' + image(asset_id) + '"><p class="credit">' + escape(assets[asset_id]["credit"])+("<br>Location: "+escape(photo_places[asset_id]["name"])+" · "+escape(photo_places[asset_id]["basis"])+" · <a href=\""+escape(map_url(photo_places[asset_id]),quote=True)+"\">Open map</a>" if asset_id in photo_places else "<br>Location not supplied") + '</p></td>' for asset_id in chapter["asset_ids"][start:start + 2])
+        for start in range(0, len(chapter["asset_ids"]), columns):
+            cells = ''.join('<td><img alt="Travel photograph" src="' + image(asset_id) + '"><p class="credit">' + escape(assets[asset_id]["credit"])+("<br>Location: "+escape(photo_places[asset_id]["name"])+" · "+escape(photo_places[asset_id]["basis"])+" · <a href=\""+escape(map_url(photo_places[asset_id]),quote=True)+"\">Open map</a>" if asset_id in photo_places else "<br>Location not supplied") + '</p></td>' for asset_id in chapter["asset_ids"][start:start + columns])
             figures.append('<table class="photographs"><tr>' + cells + '</tr></table>')
         paragraphs = ''.join('<p class="prose">' + escape(paragraph) + '</p>' for paragraph in chapter["body"].split("\n\n"))
         quote = '<blockquote>「' + escape(chapter["quote"]) + '」</blockquote>' if chapter["quote"] else ''
@@ -114,7 +117,44 @@ def pdf_html(revision, assets):
     blockquote {{border-left:2px solid #bfcc9e;margin:9mm 0;padding:2mm 0 2mm 6mm;color:#638150;font-size:12pt;white-space:pre-wrap;overflow-wrap:anywhere}}
     .colophon {{break-before:page;font-size:9pt}} .colophon p {{margin:7mm 0;overflow-wrap:anywhere}} a {{color:#4a704e}} .note {{font:8pt/1.9 sans-serif;color:#87927b}}
     """
-    return f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="author" content="MemoryWeaver"><title>{escape(album["title"])} · v{version}</title><style>{css}</style></head><body><section class="cover"><img alt="Cover photograph" src="{image(album["cover_asset_id"])}"><div class="shade"></div><div class="cover-top">A MEMORYWEAVER TRAVEL JOURNAL</div><div class="cover-copy"><div class="eyebrow">{escape(album["location"])}</div><h1>{escape(album["title"])}</h1><p class="subtitle">{escape(album["subtitle"])}</p><div class="dates">{escape(album["date_label"])} · VERSION {version} · {escape(revision["mode"].upper())}</div></div></section>{journey}{"".join(chapters)}<section class="colophon"><div class="eyebrow">THE PEOPLE BEHIND THE PICTURES</div><h2>Stories worth keeping.</h2>{"".join(credits)}<p class="note">{sample_note}<br>{escape(revision["mode"].upper())} edition · Version {version}. Generated for your private Mattermost room. Cloud publication requires separate explicit approval.</p></section></body></html>'
+    # Local allowlisted recipes only: no untrusted style interpolation.
+    css += {
+        "classic": "",
+        "quiet": """
+        body{color:#303b35}.cover{background:#f5f0e5;color:#303b35}
+        .cover img{left:100mm;width:110mm;height:297mm}.shade{display:none}
+        .cover-top{right:120mm;color:#a74332;line-height:2}
+        .cover-copy{left:14mm;right:121mm;bottom:32mm}.cover h1{font-size:29pt;line-height:1.35}
+        .cover .eyebrow{color:#a74332}.cover .subtitle{font-size:10pt}
+        .cover .dates{border-color:#c6bba5;font-size:7pt;line-height:1.9}
+        .eyebrow{color:#a74332}h2{color:#303b35}blockquote{border-color:#a74332;color:#81513b}
+        td img{object-fit:contain;height:90mm}.credit{color:#696e60}a{color:#87553e}
+        """,
+        "editorial": """
+        body{color:#3b2931}.cover{background:#fffaf3;color:#3b2931}
+        .cover img{left:14mm;top:115mm;width:182mm;height:162mm;object-fit:contain}
+        .shade{display:none}.cover-top{color:#8d344a;border-bottom:1px solid #bc9aa4;padding-bottom:4mm}
+        .cover-copy{top:42mm;left:18mm;right:18mm;bottom:auto;text-align:center}
+        .cover h1{font-family:Georgia,serif;font-style:italic;font-size:34pt;line-height:1.15;margin:4mm 0}
+        .cover .eyebrow{color:#8d344a}.cover .subtitle{font-size:10pt;margin:5mm 0}
+        .cover .dates{border:0;margin:4mm 0;padding:0;color:#8d344a;font-size:7pt}
+        .eyebrow{color:#8d344a}h2{color:#78374b;font-style:italic}
+        blockquote{color:#8d344a;border-color:#bc8e99}td img{object-fit:contain;height:86mm}
+        .credit{color:#79616a}a{color:#8d344a}
+        """,
+        "urban": """
+        body{font-family:'Noto Sans CJK JP','Helvetica Neue',sans-serif;color:#1c2631;line-height:1.8}
+        .cover{background:#182330}.cover img{top:150mm;height:147mm;object-fit:cover}.shade{display:none}
+        .cover-copy{top:43mm;bottom:auto;left:16mm;right:16mm}
+        .cover h1{font-family:sans-serif;font-size:38pt;font-weight:800;text-transform:uppercase;line-height:1.05;margin:7mm 0}
+        .cover .eyebrow{color:#f5cb43}.cover .subtitle{font-size:10pt;line-height:1.6}
+        .cover .dates{font-size:7pt;margin-top:7mm}.eyebrow{color:#254cc4;font-weight:bold}
+        h2{font-family:sans-serif;font-weight:800;color:#254cc4;line-height:1.2}
+        td img{height:65mm;object-fit:contain}blockquote{font-family:sans-serif;font-weight:bold;color:#254cc4;border-color:#e5b821}
+        .credit{color:#586775}a{color:#254cc4}
+        """,
+    }[design]
+    return f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="author" content="MemoryWeaver"><title>{escape(album["title"])} · v{version}</title><style>{css}</style></head><body data-design="{design}"><section class="cover"><img alt="Cover photograph" src="{image(album["cover_asset_id"])}"><div class="shade"></div><div class="cover-top">A MEMORYWEAVER TRAVEL JOURNAL</div><div class="cover-copy"><div class="eyebrow">{escape(album["location"])}</div><h1>{escape(album["title"])}</h1><p class="subtitle">{escape(album["subtitle"])}</p><div class="dates">{escape(album["date_label"])} · VERSION {version} · {escape(revision["mode"].upper())}</div></div></section>{journey}{"".join(chapters)}<section class="colophon"><div class="eyebrow">THE PEOPLE BEHIND THE PICTURES</div><h2>Stories worth keeping.</h2>{"".join(credits)}<p class="note">{sample_note}<br>{escape(revision["mode"].upper())} edition · Version {version}. Generated for your private Mattermost room. Cloud publication requires separate explicit approval.</p></section></body></html>'
 
 
 def _atomic_write(path, contents):

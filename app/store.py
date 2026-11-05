@@ -63,6 +63,8 @@ class Store:
             return value
 
     def commit(self, album, job_id, mode, sources):
+        from app.design import choose_design
+        album = {**album, "design": choose_design(album, sources)}
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             job = db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()

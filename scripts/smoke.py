@@ -1,6 +1,7 @@
 """Real Mattermost → Switch integration. Runs only with replay and cloud OFF."""
 import asyncio
 import hashlib
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -83,7 +84,8 @@ async def main():
         await post("@mw-collector Create a travel album from this room in English." if store.get("trip") else "@mw-collector 今回の沖縄旅行をアルバムにして")
         first = await wait_version(before)
         assert len(first["album"]["chapters"]) == 3
-        assert len(first["sources"]) == 6
+        expected = next(t for t in json.loads(Path("samples/trips.json").read_text()) if t["id"] == store.get("trip")["id"]) if store.get("trip",{}).get("id") in {"kyoto","paris","new-york"} else None
+        assert len(first["sources"]) == (len(expected["posts"]) if expected else 6)
         assert {s["author"] for s in first["sources"]} == {"traveler", "hana"}
         stale_command = approval_command(first)
         print("PASS generation: real Mattermost posts → Switch documents → three-chapter preview")

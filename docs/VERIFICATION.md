@@ -1,5 +1,14 @@
 # Verification record
 
+## Expanded photographs and book art direction — November 5, 2026
+
+- Expanded the three primary fictional fixtures to **six distinct licensed photographs each**: Kyoto has 9 source memories, Paris 8 and New York 8. Added Gion / Togetsu-kyo / a second temple view; Paris bridge / Montmartre / Tuileries / Notre-Dame; and DUMBO / Times Square / Bethesda Terrace / Grand Central. Metadata-free JPEGs and complete attribution/license records ship in Git.
+- Native Console Claude → Codex → Publisher produced **Kyoto LIVE v4** with all 9 sources and 6 photos, through genuine Switch draft/review documents. The native smoke observer downloaded the real Mattermost cover/PDF and verified byte equality with the saved artifacts and HTTP PDF endpoint. The existing bamboo cover was preserved. Paris and New York refreshed sample books remain explicitly **REPLAY**.
+- Web, PDF and sanitized exports use an edition-bound allowlisted design: Kyoto `quiet`, Paris `editorial`, New York `urban`. AI collaborators can select the recipe through Album JSON; missing recipes resolve from supplied destination/cited place names. Raw model CSS/HTML is rejected by the schema. Style changes invalidate the exact-version publication digest; older recipe-less editions use classic and previously delivered PDFs remain byte-stable.
+- **71 Python tests passed**, including actual PDF rendering for all three new recipes, six distinct sourced photos per book, location/recipe snapshot and consent integrity, export verification, and existing delivery/privacy regressions. **8 desktop/mobile Chromium tests passed** with all six photographs loaded in each book, matching recipe attributes, local map interactions, no remote image/font/tile requests, no horizontal overflow, and retained legacy links.
+- Upgraded the running Docker setup and seeded only missing posts through real Mattermost/Switch. Re-running the seed checks per-post receipts instead of skipping all additions after `seed:complete`. Publisher's asynchronous Switch → Mattermost delivery required the native smoke observer to wait for the actual post, rather than assume immediate bridge visibility after acceptance.
+- Updated the English README with photo counts, design behavior, explicit redesign instructions and the additive upgrade procedure. Cloud publication remains disabled; no GitHub/Cloudflare book publication or approval was performed.
+
 ## Locations and world-trip showcase — November 5, 2026
 
 - **Three real private sample channels and separate books:** `kyoto-travel-journal` (6 English memories / 3 photos), `paris-travel-journal` (4 / 2), and `new-york-travel-journal` (4 / 2). Kyoto is the default; upgrades keep the previous Okinawa root database, sources, media and v13 instead of relabeling them. A database backup was made before the upgrade.

@@ -55,9 +55,15 @@ async def main():
                 job_id=db.execute("SELECT job_id FROM revisions WHERE id=?",(revision["version"],)).fetchone()[0]
             receipt=store.get("console-job:"+job_id)
             assert receipt and receipt.get("draft_id"),"Missing authenticated native draft receipt"
-            r=await mm.get(f"/api/v4/channels/{state['channel_id']}/posts",params={"per_page":100});r.raise_for_status()
             marker=f"MemoryWeaver · v{revision['version']} · LIVE"
-            posts=[post for post in r.json()["posts"].values() if marker in post["message"] and len(post.get("file_ids",[]))==2]
+            # Switch acceptance precedes asynchronous delivery to the bridge.
+            # Observe the real Mattermost post rather than racing its arrival.
+            delivery_deadline=time.monotonic()+30
+            while True:
+                r=await mm.get(f"/api/v4/channels/{state['channel_id']}/posts",params={"per_page":200});r.raise_for_status()
+                posts=[post for post in r.json()["posts"].values() if marker in post["message"].splitlines() and len(post.get("file_ids",[]))==2]
+                if posts or time.monotonic()>=delivery_deadline:break
+                await asyncio.sleep(1)
             assert len(posts)==1,"Expected one Publisher completion post with both attachments"
             post=posts[0]
             assert f"version={revision['version']}" in post["message"] and revision["album"]["title"] in post["message"]
