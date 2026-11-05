@@ -109,24 +109,38 @@ async def world(args,root):
                     r=await http.post(route,headers=admin,json=data);r.raise_for_status()
                 hana=await login('hana',password)
                 try:
-                    if not child.get('seed:complete'):
-                        r=await http.post('/api/v4/posts',headers=human,json={"channel_id":channel,"message":"MemoryWeaver sample · FICTIONAL TRAVEL JOURNAL · Licensed landmark illustrations. Sample location pins are approximate fictional stops, NOT the photographer’s original GPS or proof of these travelers’ presence."});r.raise_for_status()
-                        posts=definition['posts'];order=list(range(0,len(posts),2))[::-1]+list(range(1,len(posts),2))
-                        for i in order:
-                            p=posts[i]
-                            if child.get('seed:post:'+p['key']):continue
-                            headers=human if p['author']=='traveler' else hana;files=[]
-                            if p['asset']:
-                                image=Path('app/static/assets')/(p['asset']+'.jpg')
-                                r=await http.post('/api/v4/files',headers=headers,data={"channel_id":channel},files={"files":(image.name,image.read_bytes(),'image/jpeg')});r.raise_for_status();files=[f['id'] for f in r.json()['file_infos']]
-                            place=p['location'];annotation=f"[Sample location: {place['name']} | {place['latitude']},{place['longitude']}]"
-                            r=await http.post('/api/v4/posts',headers=headers,json={"channel_id":channel,"message":"["+p['at']+"] "+annotation+"\n"+p['text'],"file_ids":files});r.raise_for_status();child.set('seed:post:'+p['key'],r.json()['id'])
-                        child.set('seed:complete',True)
-                        print('Seeded '+tid+' with '+str(len(posts))+' English memories',flush=True)
-                    else:print(tid+': sample already posted; no duplicates',flush=True)
-                    if args.generate:
-                        prefix='@mw-collector ' if args.native else '@mw-collector [DEMO REPLAY] '
-                        r=await http.post('/api/v4/posts',headers=human,json={"channel_id":channel,"message":prefix+"Create an English travel album from this room. Preserve every memory, photograph, and supplied location. Do not publish."});r.raise_for_status()
+                    from scripts.seed_sync import connected_collector,confirm_post
+                    async with connected_collector(child) as switch:
+                        if not child.get('seed:complete'):
+                            r=await http.post('/api/v4/posts',headers=human,json={"channel_id":channel,"message":"MemoryWeaver sample · FICTIONAL TRAVEL JOURNAL · Licensed landmark illustrations. Sample location pins are approximate fictional stops, NOT the photographer’s original GPS or proof of these travelers’ presence."});r.raise_for_status()
+                            posts=definition['posts'];order=list(range(0,len(posts),2))[::-1]+list(range(1,len(posts),2))
+                            for i in order:
+                                p=posts[i]
+                                existing=child.get('seed:post:'+p['key'])
+                                if existing:
+                                    r=await http.get('/api/v4/posts/'+existing,headers=human);r.raise_for_status()
+                                    await confirm_post(switch,r.json()['message'],(Path('app/static/assets')/(p['asset']+'.jpg')).read_bytes() if p['asset'] else None)
+                                    continue
+                                headers=human if p['author']=='traveler' else hana;files=[]
+                                if p['asset']:
+                                    image=Path('app/static/assets')/(p['asset']+'.jpg')
+                                    r=await http.post('/api/v4/files',headers=headers,data={"channel_id":channel},files={"files":(image.name,image.read_bytes(),'image/jpeg')});r.raise_for_status();files=[f['id'] for f in r.json()['file_infos']]
+                                place=p['location'];annotation=f"[Sample location: {place['name']} | {place['latitude']},{place['longitude']}]"
+                                body="["+p['at']+"] "+annotation+"\n"+p['text']
+                                r=await http.post('/api/v4/posts',headers=headers,json={"channel_id":channel,"message":body,"file_ids":files});r.raise_for_status()
+                                child.set('seed:post:'+p['key'],r.json()['id'])
+                                await confirm_post(switch,body,image.read_bytes() if p['asset'] else None)
+                            child.set('seed:complete',True)
+                            print('Seeded '+tid+' with '+str(len(posts))+' English memories',flush=True)
+                        else:print(tid+': sample already posted; no duplicates',flush=True)
+                        if args.generate:
+                            for source_post in definition['posts']:
+                                posted_id=child.get('seed:post:'+source_post['key'])
+                                r=await http.get('/api/v4/posts/'+posted_id,headers=human);r.raise_for_status()
+                                photo=(Path('app/static/assets')/(source_post['asset']+'.jpg')).read_bytes() if source_post['asset'] else None
+                                await confirm_post(switch,r.json()['message'],photo)
+                            prefix='@mw-collector ' if args.native else '@mw-collector [DEMO REPLAY] '
+                            r=await http.post('/api/v4/posts',headers=human,json={"channel_id":channel,"message":prefix+"Create an English travel album from this room. Preserve every memory, photograph, and supplied location. Do not publish."});r.raise_for_status()
                 finally:await http.post('/api/v4/users/logout',headers=hana)
         finally:
             await http.post('/api/v4/users/logout',headers=human)
