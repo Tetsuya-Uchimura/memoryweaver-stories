@@ -8,33 +8,211 @@ Built for [Flip the Switch](https://www.wemakedevs.org/hackathons/switch), Track
 
 ![MemoryWeaver private travel-book studio, showing the fictional Okinawa replay sample](docs/screenshots/studio.jpg)
 
-## Try it on your own machine
+## Judge setup: reproduce the live Switch Console workflow
 
-Prerequisites: **Docker Desktop / Docker Engine with Compose v2, Git, and Python 3.9+**. Start Docker first. Allow roughly 8 GB RAM and several GB of disk for the initial image build. Internet access is required for the first build and for live model calls. Apple Silicon is supported; the official Mattermost image runs under amd64 emulation.
+This is the workflow exercised during development: **Mattermost → Switch → Console-managed Claude Storyteller → Console-managed Codex Editor → Publisher → local web book + Mattermost PDF**. Follow the steps below on your own computer. No developer AI account, existing Mattermost server, GitHub Actions configuration, or Cloudflare account is required. Repository access is needed to clone this currently private repository.
 
-From a clone of this repository:
+### Prerequisites and tested versions
+
+- Docker Desktop, or Docker Engine with Compose v2, running before setup. Allow roughly 8 GB RAM and several GB of disk for the initial build.
+- Git and Python **3.9+** on the host. The setup helpers use Python's standard library; judges do not need a virtual environment, host PDF libraries, or host Japanese fonts.
+- [Official Switch Console](https://github.com/sandbox-quantum/switch/releases/tag/switch-console-v0.40.1). The tested desktop release is **0.40.1** on **macOS / Apple Silicon**. Install the release for your platform; on macOS, open its DMG, copy Switch Console to Applications, and launch it.
+- Your own Claude Code and Codex accounts with access to a supported model. Complete each provider's sign-in on **This computer** in Console. If a CLI is missing, complete Console's provider setup/install flow first. The providers may require a subscription, browser verification, or consent.
+- Internet access for initial downloads and live model calls. Local ports **8000** (Switch), **8065** (Mattermost), **8787** (book), and **55432** (PostgreSQL) must be available. Stop conflicting services before using these default-address instructions.
+
+Docker builds official Switch source pinned to commit `6e4ade5269d65ee38060a9f43b77c5e5b3be2f10` (core **0.31.0**, Gateway contract **1**). The Mattermost image runs under amd64 emulation on Apple Silicon. Console and core have separate version numbers. Live Console generation/editing was tested on the development Mac; a fresh Console setup on a second physical machine and other desktop operating systems remain unverified. See [verification evidence and limits](docs/VERIFICATION.md).
+
+### 1. Clone and start the Docker environment
+
+Run these commands from a terminal:
 
 ```sh
 git clone https://github.com/Tetsuya-Uchimura/memoryweaver-stories.git
 cd memoryweaver-stories
 python3 scripts/dev.py up
-python3 scripts/dev.py seed --generate
+python3 scripts/dev.py status
+```
+
+`up` fetches and verifies the official Switch source, builds upstream Dockerfiles, starts PostgreSQL and Mattermost, runs Switch's official setup, registers four tool/workflow agent identities, creates the private **okinawa-memories** room, and starts MemoryWeaver. It generates fresh local secrets in an ignored, owner-readable `.env`. Do not copy the developer's `.env` or authentication files.
+
+Wait for the setup/bootstrap jobs to exit successfully and for Mattermost and the web service to become healthy. A new installation has no book yet.
+
+| Service | Address | Purpose |
+| --- | --- | --- |
+| Switch server / Gateway web UI | [http://localhost:8000](http://localhost:8000) | Server to add in Switch Console |
+| Mattermost | [http://localhost:8065](http://localhost:8065) | Post memories, request books and receive results |
+| MemoryWeaver | [http://localhost:8787](http://localhost:8787) | Read the latest private book |
+
+### 2. Retrieve your local sign-in details
+
+```sh
 python3 scripts/dev.py credentials
 ```
 
-Open **[MemoryWeaver](http://localhost:8787)** and **[Mattermost](http://localhost:8065)**. Sign in to Mattermost with the locally generated `MATTERMOST_USER` and `MATTERMOST_USER_PASSWORD` printed by the credentials command. Open the private **okinawa-memories** channel in the **memoryweaver** team.
+Use the values generated **on your machine**:
 
-The `up` command fetches the audited official Switch source, builds it, starts PostgreSQL and Mattermost, runs Switch’s own setup job, registers four custom agents, creates a private bridged room, and starts the book application. It generates fresh secrets in a gitignored, owner-readable `.env`. The `seed --generate` command posts six deliberately shuffled fictional memories and four licensed illustrative photographs using two actual Mattermost accounts, then asks the Collector to make a book. This repository is currently private; reviewers need repository access to clone it.
+| Sign-in screen | Enter |
+| --- | --- |
+| Switch Console's Docker-server Email | `GATEWAY_ADMIN_EMAIL` from the command output |
+| Switch Console's Docker-server Password | `GATEWAY_ADMIN_PASSWORD` from the command output |
+| Mattermost username | `MATTERMOST_USER` from the command output; default: `traveler` |
+| Mattermost password | `MATTERMOST_USER_PASSWORD` from the command output |
 
-**The default is an explicitly labeled REPLAY DEMO.** It uses real Mattermost, real Switch, real room documents, real targeted handoffs, and deterministic extractive writing. It requires no AI, GitHub, or Cloudflare account. It is useful for checking infrastructure; it is **not evidence of live AI generation**. For the full creative workflow, enable live mode below.
+The Switch and Mattermost passwords are different. Keep the output private; no fixed developer password is needed. Sign in to Mattermost in a browser, select the **memoryweaver** team, and open **okinawa-memories**.
 
-After the first build, `python3 scripts/dev.py up` reuses the same accounts, room, data, and authentication volume. `seed` is idempotent. No developer account or credentials are bundled.
+### 3. Authenticate providers and connect Switch Console to Docker
 
-## Use Switch Console with your authenticated providers
+1. In Console, open **Settings → Agent providers** for **This computer**. Install/configure Claude Code and Codex if needed, then sign in to both with your own accounts. Confirm both show **Signed in**. Docker's installed CLIs are separate and do not satisfy this host-provider check.
+2. From Console's server selector, choose to connect to an existing server. Enter **Name: `MemoryWeaver Docker`** and **Server address: `http://localhost:8000`**, then **Add server**.
+3. On **Sign in to MemoryWeaver Docker**, enter the Gateway email/password from step 2.
+4. On **Link your messaging accounts**, link the Docker Mattermost **traveler** account. If it already shows **Mattermost · @traveler · Linked**, click **Done**.
+5. Check the selected server is **MemoryWeaver Docker** and shows **Connected**. **Your Rooms** should include **okinawa-memories**.
 
-For the GUI-first workflow, follow [Switch Console setup](docs/CONSOLE.md): connect Console to the Docker server, register your local Claude Storyteller and Codex Editor, prepare their role directories, and run `python3 scripts/console.py bind`. Collector → Console Claude → Console Codex → Publisher then produces the private web book and PDF through Switch. Console sign-in stays on your machine; no container authentication is required in this mode.
+Console may also have its own **Local Switch server**. Use the **MemoryWeaver Docker** connection for the remaining steps. The Docker bootstrap has already configured the Mattermost connector and room; no additional connector, SSH host, or server-managed agent controller is needed. The room's **Chat → Open in Mattermost** button opens the actual conversation; externally bridged chat is not embedded in Console.
+
+### 4. Prepare the two local agent workspaces
+
+In the cloned repository's terminal:
+
+```sh
+python3 scripts/console.py prepare
+```
+
+The command prints absolute paths for:
+
+```text
+~/Documents/MemoryWeaver Agents/storyteller
+~/Documents/MemoryWeaver Agents/editor
+```
+
+It writes `CLAUDE.md` or `AGENTS.md` and the album/review JSON schemas. Select the printed directories with Console's **Choose…** button in the next step. These are directories **on your computer**, not `/data` or `/workspace` inside Docker. A custom parent directory is supported with `--directory /absolute/path`.
+
+### 5. Register Claude Storyteller and Codex Editor
+
+Under **MemoryWeaver Docker → Your Agents → +**, add the following **two separate agents**:
+
+| Field | Storyteller | Editor |
+| --- | --- | --- |
+| Name | `mw-storyteller-claude` | `mw-editor-codex` |
+| Description | `Writes evidence-based travel stories for MemoryWeaver.` | `Reviews MemoryWeaver drafts against source memories and photographs.` |
+| Agent instructions | `Follow CLAUDE.md and album.schema.json in your working directory. Handle MW_CONSOLE through Switch. Write in Japanese unless requested otherwise. Never publish or approve publication.` | `Follow AGENTS.md and editorial.schema.json in your working directory. Handle MW_DRAFT through Switch. Verify facts, dates, citations, photos and verbatim quotes. Never publish or claim a web/PDF update without Publisher confirmation.` |
+| Run location | **This computer** | **This computer** |
+| Directory | Printed absolute `storyteller` path from step 4 | Printed absolute `editor` path from step 4 |
+| Agent provider | **Claude Code** | **Codex** |
+| Auto mode | **On** | **On** |
+| Bypass permissions | **Off** | **Off** |
+| Who can talk to your agent | **Anyone** | **Anyone** |
+
+Click **Add agent** for each, open its details, and use **Add to room → okinawa-memories**. You can add them to the other rooms too. An addressing rule with `Rooms: any` does **not** automatically join all rooms. **Anyone** allows handoffs from bootstrap-owned Collector/Publisher agents, which have a different owner from your Console agents; room membership still bounds access.
+
+The server may say **agent management is not turned on**. This is expected: Console runs the two provider sessions on your computer. Do not recreate the bootstrap agents `mw-collector`, `mw-storyteller`, `mw-editor`, or `mw-publisher`; the new native agents have their own distinct names above.
+
+Choose a model your account supports under **Advanced configuration**. In our tested ChatGPT account, an old global `gpt-5.2-codex` setting failed; selecting the available `gpt-6.1-sol` for the native Codex agent and restarting it resolved the error. This is an observed account-specific choice, not a promise that the same model is available to every judge. Console settings changes may require restarting that agent's session. Complete any initial workspace-trust or tool-permission prompts shown by Console; leave bypass permissions off.
+
+### 6. Bind the native agents to MemoryWeaver
+
+```sh
+python3 scripts/console.py bind
+```
+
+Expected success message:
+
+```text
+Console runtime bound: mw-storyteller-claude → mw-editor-codex → mw-publisher
+```
+
+The helper checks provider types, room membership and addressing, then saves the two authoritative Switch IDs and names. It does not copy provider credentials. Keep **`PUBLISH_ENABLED=false`** in `.env`.
+
+For this Console workflow, **do not change `AI_MODE` to `live` and do not run `dev.py auth`**: those are for the separate container-CLI option below. The saved Console binding selects live native inference and idles the original Docker writer/reviewer roles. The web UI should show **LIVE AI**, with two Console-managed model roles and two connected Docker tool agents. That label indicates runtime configuration; actual completion is confirmed by Publisher's saved-version post.
+
+### 7. Post the safe sample and request a book in Mattermost
+
+```sh
+python3 scripts/dev.py seed
+```
+
+This posts **six fictional memories and four licensed illustrative photos**, deliberately out of order, from **traveler** and **hana**. It does not generate a replay book. Re-running `seed` does not duplicate the sample.
+
+In **Mattermost → memoryweaver → okinawa-memories**, send:
+
+```text
+@mw-collector 今回の沖縄旅行を日本語のアルバムにして。思い出と写真をすべて残して、公開はしないでください。
+```
+
+This asks: “Make a Japanese album of this Okinawa trip, retain every memory/photo, and do not publish it.” You can instead request an English book with `@mw-collector Make an English travel album of our Okinawa trip. Keep all memories and photographs. Do not publish it.`
+
+Keep Docker and Console running. Collector creates a Switch evidence document, Claude writes a draft, Codex reviews it, and Publisher saves the result. Allow several minutes for inference; respond to factual clarification requests if needed. The thread contains `MW_CONSOLE`, `MW_DRAFT`, and `MW_REVIEW` document references. If a provider is unavailable, the workflow reports/waits for that problem; it does not silently substitute replay writing.
+
+### 8. Receive the book and verify an edit
+
+Publisher posts directly to the same Mattermost channel with:
+
+- The travel-book title and a version-specific web URL, such as `http://localhost:8787/?version=1`.
+- A cover-preview image and the actual downloadable PDF, attached together.
+- A **LIVE** edition marker. No public deployment is needed.
+
+Open the link, scroll through the book, inspect a chapter's original-source citations, and open the PDF. In a fresh sample environment, check that the six source posts and four photos were retained. The developer's existing v13, seventh source post and fifth private photo are **not** bundled in a fresh judge installation.
+
+Next, ask for a cover edit:
+
+```text
+@mw-collector 表紙を夕日の写真（sunset）に変更してください。ほかの写真・思い出・本文はすべて保持して、公開はしないでください。
+```
+
+If the cover already uses sunset, request **海の写真（coast）** instead so the change is visible. Wait for a **new Publisher completion post and PDF**, then check the new cover and unchanged memories. Older completion links retain their original editions; open `http://localhost:8787/` to follow the latest version. Send one editing request at a time.
+
+### 9. Optional automated verification and restart
+
+For the sample workflow, this observer checks an already requested native generation, then **posts an additional real cover-change test** and verifies its result:
+
+```sh
+python3 scripts/dev.py compose run --rm --no-deps -T bootstrap python -m scripts.console_smoke --after 0 --edit
+```
+
+`--after 0` works for the first book in a new installation or observes the latest completed native book. For a later request, use the saved version number from before that request. The observer checks the native draft receipt, LIVE saved version, Publisher bot identity, version URL, and PDF/cover attachment byte hashes against local artifacts. It also checks that publication state did not change. The default timeout is 600 seconds per generation; `--timeout 1200` allows longer provider latency. It requires the sample's `coast` and `sunset` assets. It sends no public approval.
+
+To stop and resume the same environment:
+
+```sh
+python3 scripts/dev.py down
+python3 scripts/dev.py up
+```
+
+Volumes retain the book, local accounts and native role binding. Reopen Console, select **MemoryWeaver Docker**, confirm both providers are signed in, and leave Console running for the next request. Existing user data is reused; cloning elsewhere without a different Compose project name/ports is not an isolated second stack on the same machine.
+
+### Troubleshooting and verification boundaries
+
+| Symptom | Check / recovery |
+| --- | --- |
+| Docker ports already allocated | Stop the conflicting stack; these instructions use the default ports. Console's own local server is a separate environment. |
+| No `okinawa-memories` in Console | Select **MemoryWeaver Docker**, verify `http://localhost:8000` and successful bootstrap, then check the linked traveler account. |
+| `bind` cannot find an agent / wrong provider | Match the two exact names/provider choices in step 5 on the Docker server, not Console's Local Switch server. |
+| `bind` requests membership or addressing changes | Add both agents to `okinawa-memories` and set **Who can talk → Anyone**. Then retry binding. |
+| `bind` reports a working job | Wait for the current request to finish before changing runtime bindings. |
+| Model unsupported, signed out, or tool permission pending | Inspect the native agent in Console, select an available model, sign in/approve the specific prompt if needed, and restart the affected session. Docker authentication does not fix a host Console provider. |
+| Requests stop after closing Console | Reopen Console and restore its provider sessions. Docker tool agents remain running, but cannot replace the native models. |
+| A failed/abandoned generation blocks a new request | Fix the provider/session first. A working job older than 15 minutes expires when the next Collector request arrives. |
+| Book unchanged after an edit | Check Publisher's completion/error post. Use the latest root URL rather than an older pinned completion URL. |
+| Book exists but attachment delivery failed | Send `@mw-publisher PDFを再送して vN`, replacing `N` with your saved version. This retries delivery without regenerating the book. |
+
+For service diagnostics, use `python3 scripts/dev.py status` and `python3 scripts/dev.py logs collector publisher`. Native model activity is in **Switch Console and the Mattermost thread**, not Docker's idle writer/reviewer logs. [Detailed protocol and recovery notes](docs/CONSOLE.md) explain the handoffs.
+
+Setup of Docker services, Mattermost, bridge, tool agents and the room is automated. **Installing Console/provider CLIs, account authentication, registering/joining the two native agents and choosing an accessible model remain manual in this release.** Bootstrap does not enroll your desktop providers or automate account consent. GitHub/Cloudflare configuration is optional and separate. Local native generation, edits and real PDF delivery were verified; second-machine native setup and actual Cloudflare deployment remain unverified. Only use the fictional sample for a public demo. No real family photo, private message or provider credential is included in this repository.
+
+## Optional infrastructure-only replay demo
+
+Use this alternative in a **fresh environment without a Console binding** when you want to check Docker, Mattermost and Switch without AI authentication:
+
+```sh
+python3 scripts/dev.py up
+python3 scripts/dev.py seed --generate
+```
+
+The default `.env` selects **REPLAY DEMO**: real Switch communication and documents with deterministic extractive writing, not live model inference. It requires no provider or Cloudflare account; repository access is still needed to obtain the source. After the first build, `up` reuses the same accounts and volumes. No developer credentials are bundled. The replay smoke test below refuses Console-bound data; do not use it on your live native book.
 
 ## Use Claude Code and Codex inside Docker
+
+This is an alternative for a fresh environment **without a Console binding**, not an additional step after the judge setup above. Container-CLI live inference has not been verified with authenticated providers in this project; the verified live path is Console-managed.
 
 The two pinned CLIs are installed **inside the agent image**. Authenticate your own accounts:
 
@@ -64,7 +242,7 @@ Post photographs and short messages in the Mattermost room. Multiple contributor
 [2026-10-13T10:30:00+09:00] 美ら海水族館へ。ジンベエザメが想像以上に大きかった！
 ```
 
-An explicit capture date takes precedence over upload time. Without one, the upload time is used and should be reviewed. Photo GPS/EXIF is removed; the app does not infer an itinerary or identities from an image. Storyteller receives the source text and photo references; the live Codex Editor can inspect up to eight sanitized photographs for visual consistency and selection. Captions provide the factual context of what happened, who was there, and when. Without captions, an image supports neutral visual description, not invented events.
+An explicit capture date takes precedence over upload time. Without one, the upload time is used and should be reviewed. Photo GPS/EXIF is removed; the app does not infer an itinerary or identities from an image. Storyteller receives the source text and photo references; the container-CLI Codex Editor can inspect up to eight sanitized photographs for visual consistency and selection. Console-managed providers use their native Switch tools instead of that eight-image harness limit. Captions provide the factual context of what happened, who was there, and when. Without captions, an image supports neutral visual description, not invented events.
 
 Ask in Mattermost:
 
@@ -132,7 +310,10 @@ For the developer repository, `python3 scripts/setup_publishing.py` creates/adop
 | Four agents, addressing, private bridged room | Project bootstrap through audited Switch operations |
 | Safe sample contributors and photo posts | `seed` through Mattermost’s actual API |
 | Claude Code / Codex sign-in | Human authentication, required by the providers |
-| Switch Console sign-in | Required only for the optional GUI-first native-provider path |
+| Switch Console/provider sign-in | Manual for the recommended judge workflow; uses the judge's own accounts |
+| Native role guides and JSON schemas | Generated by `python3 scripts/console.py prepare` |
+| Two Console agents and room membership | Manual GUI registration/settings described above |
+| Native workflow binding | `python3 scripts/console.py bind` validates and saves registered IDs/names |
 | GitHub and Cloudflare | Optional, developer-provided configuration; never required for local judging |
 | Production publication | Explicit human consent to each exact version |
 
@@ -147,7 +328,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-Browser checks expect the Docker stack to be running in replay mode with the sample book generated. The integration check drives real Mattermost requests:
+Browser checks expect a running Docker stack and a generated sample book; they support both replay and Console-live mode. The replay integration check below drives real Mattermost requests and requires a separate sample environment without a Console binding:
 
 Host-side PDF tests require Pango; on Apple Silicon with Homebrew, use `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib .venv/bin/python -m pytest -q` after installing Pango. The judge's Docker setup already includes native libraries and Japanese fonts; no host font or PDF installation is required.
 
@@ -164,10 +345,10 @@ Useful commands:
 ```sh
 python3 scripts/dev.py status
 python3 scripts/dev.py logs collector storyteller editor publisher
-python3 scripts/dev.py compose exec editor codex login status
-python3 scripts/dev.py compose exec storyteller claude auth status
 python3 scripts/dev.py down
 ```
+
+For the optional container-CLI mode only, inspect provider sign-in with `python3 scripts/dev.py compose exec editor codex login status` and `python3 scripts/dev.py compose exec storyteller claude auth status`. For Console mode, inspect providers in Console.
 
 `down` keeps data and authentication volumes. It does not erase your memories. The web UI and upstream ports bind to loopback; this development stack is not an internet-facing multi-user service. See [Security](docs/SECURITY.md), [Architecture and Switch source audit](docs/SWITCH.md), [Demo script](docs/DEMO.md), and [Verification record](docs/VERIFICATION.md) for important details and tested boundaries.
 
