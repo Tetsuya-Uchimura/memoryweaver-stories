@@ -11,7 +11,7 @@ import tempfile
 
 from agents.publish import publication_digest, selected_assets
 
-TEMPLATE_VERSION = "private-pdf-v2"
+TEMPLATE_VERSION = "private-pdf-v3-locations"
 
 
 def album_base_url():
@@ -23,8 +23,9 @@ def album_base_url():
     return value
 
 
-def album_url(version):
-    return f"{album_base_url()}/?version={int(version)}"
+def album_url(version,trip=None):
+    from urllib.parse import urlencode
+    return album_base_url()+"/?"+urlencode({**({"trip":trip} if trip else {}),"version":int(version)})
 
 
 def artifact_paths(store, version):
@@ -71,11 +72,13 @@ def pdf_html(revision, assets):
     version = revision["version"]
     image = lambda asset_id: "https://memoryweaver.invalid/photos/" + asset_id + ".jpg"
     chapters = []
+    from app.locations import map_url
+    photo_places=revision.get("photo_locations",{})
     sources = {s["id"]: s for s in revision["sources"]}
     for chapter in album["chapters"]:
         figures = []
         for start in range(0, len(chapter["asset_ids"]), 2):
-            cells = ''.join('<td><img alt="Travel photograph" src="' + image(asset_id) + '"><p class="credit">' + escape(assets[asset_id]["credit"]) + '</p></td>' for asset_id in chapter["asset_ids"][start:start + 2])
+            cells = ''.join('<td><img alt="Travel photograph" src="' + image(asset_id) + '"><p class="credit">' + escape(assets[asset_id]["credit"])+("<br>Location: "+escape(photo_places[asset_id]["name"])+" · "+escape(photo_places[asset_id]["basis"])+" · <a href=\""+escape(map_url(photo_places[asset_id]),quote=True)+"\">Open map</a>" if asset_id in photo_places else "<br>Location not supplied") + '</p></td>' for asset_id in chapter["asset_ids"][start:start + 2])
             figures.append('<table class="photographs"><tr>' + cells + '</tr></table>')
         paragraphs = ''.join('<p class="prose">' + escape(paragraph) + '</p>' for paragraph in chapter["body"].split("\n\n"))
         quote = '<blockquote>「' + escape(chapter["quote"]) + '」</blockquote>' if chapter["quote"] else ''
@@ -90,6 +93,8 @@ def pdf_html(revision, assets):
             links = f'<br><a href="{escape(item["source_url"], quote=True)}">Original photograph</a> · <a href="{escape(item["license_url"], quote=True)}">License</a>'
         credits.append('<p><strong>' + escape(item["label"]) + '</strong><br>' + escape(item["credit"]) + links + '</p>')
     sample_note = "Licensed photographs illustrate fictional sample memories." if all(assets[a].get("sample") for a in selected_assets(revision)) else "A private copy of your travel book."
+    unique={(p["name"],p.get("latitude"),p.get("longitude"),p["basis"]):p for p in revision.get("places",[])}
+    journey='<section class="chapter"><div class="eyebrow">PLACES WE REMEMBER</div><h2>Our journey</h2>'+''.join('<p><a href="'+escape(map_url(p),quote=True)+'">'+escape(p['name'])+'</a> · '+escape(p['basis'])+(' · '+str(p['latitude'])+', '+str(p['longitude']) if p.get('latitude') is not None else '')+'</p>' for p in unique.values())+'<p class="note">Sample pins are approximate fictional landmarks, not actual camera positions. Map links open only when selected.</p></section>' if unique else ''
     title_size = 32 if len(album["title"]) < 25 else 23 if len(album["title"]) < 55 else 18
     css = f"""
     @page {{size:A4;margin:20mm 19mm 22mm;@bottom-left {{content:'MemoryWeaver · v{version}';font:8pt sans-serif;color:#89927d}}@bottom-right {{content:counter(page);font:8pt sans-serif;color:#89927d}}}}
@@ -109,7 +114,7 @@ def pdf_html(revision, assets):
     blockquote {{border-left:2px solid #bfcc9e;margin:9mm 0;padding:2mm 0 2mm 6mm;color:#638150;font-size:12pt;white-space:pre-wrap;overflow-wrap:anywhere}}
     .colophon {{break-before:page;font-size:9pt}} .colophon p {{margin:7mm 0;overflow-wrap:anywhere}} a {{color:#4a704e}} .note {{font:8pt/1.9 sans-serif;color:#87927b}}
     """
-    return f'<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="author" content="MemoryWeaver"><title>{escape(album["title"])} · v{version}</title><style>{css}</style></head><body><section class="cover"><img alt="Cover photograph" src="{image(album["cover_asset_id"])}"><div class="shade"></div><div class="cover-top">A MEMORYWEAVER TRAVEL JOURNAL</div><div class="cover-copy"><div class="eyebrow">{escape(album["location"])}</div><h1>{escape(album["title"])}</h1><p class="subtitle">{escape(album["subtitle"])}</p><div class="dates">{escape(album["date_label"])} · VERSION {version} · {escape(revision["mode"].upper())}</div></div></section>{"".join(chapters)}<section class="colophon"><div class="eyebrow">THE PEOPLE BEHIND THE PICTURES</div><h2>旅を、もう一度。</h2>{"".join(credits)}<p class="note">{sample_note}<br>{escape(revision["mode"].upper())} edition · Version {version}. Generated for your private Mattermost room. Cloud publication requires separate explicit approval.</p></section></body></html>'
+    return f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="author" content="MemoryWeaver"><title>{escape(album["title"])} · v{version}</title><style>{css}</style></head><body><section class="cover"><img alt="Cover photograph" src="{image(album["cover_asset_id"])}"><div class="shade"></div><div class="cover-top">A MEMORYWEAVER TRAVEL JOURNAL</div><div class="cover-copy"><div class="eyebrow">{escape(album["location"])}</div><h1>{escape(album["title"])}</h1><p class="subtitle">{escape(album["subtitle"])}</p><div class="dates">{escape(album["date_label"])} · VERSION {version} · {escape(revision["mode"].upper())}</div></div></section>{journey}{"".join(chapters)}<section class="colophon"><div class="eyebrow">THE PEOPLE BEHIND THE PICTURES</div><h2>Stories worth keeping.</h2>{"".join(credits)}<p class="note">{sample_note}<br>{escape(revision["mode"].upper())} edition · Version {version}. Generated for your private Mattermost room. Cloud publication requires separate explicit approval.</p></section></body></html>'
 
 
 def _atomic_write(path, contents):

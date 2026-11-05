@@ -34,9 +34,12 @@ def prepare(directory, storyteller, editor):
 
 def bind(values, storyteller, editor):
     base = "http://localhost:" + values.get("API_HOST_PORT", "8000")
+    web = "http://localhost:" + values.get("WEB_HOST_PORT", "8787")
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
     request(opener, base + "/gateway/auth/login", {"email": values["GATEWAY_ADMIN_EMAIL"], "password": values["GATEWAY_ADMIN_PASSWORD"]})
     try:
+        catalog=request(opener,web+"/api/trips")
+        room_name=next((t["channel"] for t in catalog["trips"] if t["id"]==catalog["default"]),"okinawa-memories")
         agents = request(opener, base + "/gateway/agents")
         result = {}
         for role, name in [("storyteller", storyteller), ("editor", editor)]:
@@ -48,12 +51,12 @@ def bind(values, storyteller, editor):
             if agent["connector_type"] != expected:
                 raise ValueError(name + " must use " + expected)
             detail = request(opener, base + "/gateway/agents/" + agent["id"])
-            if not any(r["room_name"] == "okinawa-memories" and not r.get("archived") for r in detail["rooms"]):
-                raise ValueError("Use Add to room to join okinawa-memories: " + name)
+            if not any(r["room_name"] == room_name and not r.get("archived") for r in detail["rooms"]):
+                raise ValueError("Use Add to room to join "+room_name+": " + name)
             if detail.get("addressing_policy") is not None:
                 raise ValueError("Use Who can talk: Anyone so bootstrap-owned tool agents can hand off: " + name)
             result[role] = {"id": agent["id"], "name": name}
-        request(opener, "http://localhost:8787/internal/console", result, values["WEB_INTERNAL_TOKEN"])
+        request(opener, web+"/internal/console", result, values["WEB_INTERNAL_TOKEN"])
         print("Console runtime bound: " + storyteller + " → " + editor + " → mw-publisher")
     finally:
         request(opener, base + "/gateway/auth/logout", {})

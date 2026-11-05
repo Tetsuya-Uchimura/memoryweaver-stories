@@ -75,6 +75,9 @@ async def harness(provider, payload):
 
 def model_images(payload):
     store = Store()
+    if payload.get("trip_id"):
+        from app.trips import trip_store
+        store=trip_store(store,payload["trip_id"])
     known = {a["id"]: a for a in store.all("assets")}
     wanted = list(dict.fromkeys(a for s in payload["sources"] for a in s["asset_ids"]))[:8]
     paths = []
@@ -104,6 +107,7 @@ def strict_schema(value):
 
 def replay(payload):
     """Extractive fixture renderer; explicitly never represented as live AI."""
+    if payload.get("language")=="en":return replay_english(payload)
     sources = payload["sources"]
     by_date = {}
     for source in sources:
@@ -131,3 +135,24 @@ def replay(payload):
     captured_dates = [s["captured_at"][:10] for s in sources if s.get("date_basis") != "posted"]
     dates = min(captured_dates) + " — " + max(captured_dates) if captured_dates else "撮影日未確認 · 各ページの日付は投稿日です"
     return dict(title="あの青を、もう一度。", subtitle="沖縄で紡いだ、私たちの小さな旅の記録。", location="OKINAWA, JAPAN", date_label=dates, cover_asset_id=cover, chapters=chapters)
+
+
+def replay_english(payload):
+    sources=payload["sources"];groups={}
+    for source in sources:groups.setdefault(source["captured_at"][:10],[]).append(source)
+    chapters=[]
+    for day,(date,items) in enumerate(sorted(groups.items()),1):
+        words=[s for s in items if s["text"].strip()]
+        location=next((s.get("location") for s in items if s.get("location")),None)
+        body="\n\n".join(s["text"] for s in words) or "A photograph was shared here. Its capture date and location remain unconfirmed."
+        if day==2 and ('emotional' in payload['job']['request'].lower() or '感動' in payload['job']['request']):body="\n\n".join(s['text'] for s in reversed(words))+"\n\nThe words we kept from this day."
+        if any(s.get('date_basis')=='posted' for s in items):body+="\n\nCapture date unconfirmed. This page uses the posting date."
+        chapters.append(dict(day=day,date=date,title=location["name"] if location else "A moment to keep",body=body,quote=words[-1]["text"] if words else "",quote_source_id=words[-1]["id"] if words else "",source_ids=[s["id"] for s in items],asset_ids=list(dict.fromkeys(a for s in items for a in s['asset_ids']))))
+    photos=[a for c in chapters for a in c['asset_ids']]
+    if not photos:raise ValueError('Add a photograph before making an album')
+    previous=payload.get('previous');cover=previous['album']['cover_asset_id'] if previous else photos[0]
+    request=payload['job']['request'].lower()
+    if 'cover' in request or '表紙' in request:
+        cover=next((a for a in photos if a in request or a.split('-')[-1] in request),cover)
+    captured=[s['captured_at'][:10] for s in sources if s.get('date_basis')!='posted']
+    return dict(title=payload.get('trip_title') or 'Small moments, lasting places',subtitle=payload.get('trip_subtitle') or 'A travel journal woven from the words we kept.',location=payload.get('destination') or 'Location unconfirmed',date_label=min(captured)+' — '+max(captured) if captured else 'Capture dates unconfirmed · posting dates shown',cover_asset_id=cover,chapters=chapters)

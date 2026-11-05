@@ -1,0 +1,220 @@
+[
+  {
+    "id": "kyoto",
+    "label": "Kyoto · Paths of quiet wonder",
+    "destination": "Kyoto, Japan",
+    "channel": "kyoto-travel-journal",
+    "language": "en",
+    "description": "Fictional Kyoto journal · gates, bamboo and temple views",
+    "title": "Between vermilion and green",
+    "subtitle": "Three days in Kyoto, remembered one small moment at a time.",
+    "posts": [
+      {
+        "key": "kyoto-0-photo",
+        "author": "traveler",
+        "at": "2026-10-12T09:00:00+09:00",
+        "text": "We arrived at Fushimi Inari Taisha and walked beneath the vermilion gates. I kept pausing to look up.",
+        "asset": "kyoto-gates",
+        "location": {
+          "name": "Fushimi Inari Taisha, Kyoto",
+          "latitude": 34.9671,
+          "longitude": 135.7727,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "kyoto-0-reply",
+        "author": "hana",
+        "at": "2026-10-12T10:15:00+09:00",
+        "text": "The red gates are the part I want to remember. Let us keep this photo.",
+        "asset": null,
+        "location": {
+          "name": "Fushimi Inari Taisha, Kyoto",
+          "latitude": 34.9671,
+          "longitude": 135.7727,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "kyoto-1-photo",
+        "author": "traveler",
+        "at": "2026-10-13T09:00:00+09:00",
+        "text": "We walked through the bamboo grove in Arashiyama. We took our time and enjoyed being there together.",
+        "asset": "kyoto-bamboo",
+        "location": {
+          "name": "Arashiyama Bamboo Grove, Kyoto",
+          "latitude": 35.0094,
+          "longitude": 135.6668,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "kyoto-1-reply",
+        "author": "hana",
+        "at": "2026-10-13T10:15:00+09:00",
+        "text": "The bamboo made this feel like a different side of Kyoto.",
+        "asset": null,
+        "location": {
+          "name": "Arashiyama Bamboo Grove, Kyoto",
+          "latitude": 35.0094,
+          "longitude": 135.6668,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "kyoto-2-photo",
+        "author": "traveler",
+        "at": "2026-10-14T09:00:00+09:00",
+        "text": "We visited Kiyomizu-dera and looked out across Kyoto. It was our last stop before heading home.",
+        "asset": "kyoto-temple",
+        "location": {
+          "name": "Kiyomizu-dera, Kyoto",
+          "latitude": 34.9949,
+          "longitude": 135.785,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "kyoto-2-reply",
+        "author": "hana",
+        "at": "2026-10-14T10:15:00+09:00",
+        "text": "I would love to come back and walk these streets again.",
+        "asset": null,
+        "location": {
+          "name": "Kiyomizu-dera, Kyoto",
+          "latitude": 34.9949,
+          "longitude": 135.785,
+          "basis": "sample"
+        }
+      }
+    ]
+  },
+  {
+    "id": "paris",
+    "label": "Paris · A little time by the Seine",
+    "destination": "Paris, France",
+    "channel": "paris-travel-journal",
+    "language": "en",
+    "description": "Fictional Paris journal · river views and the Louvre",
+    "title": "A little time by the Seine",
+    "subtitle": "Two days of looking up, slowing down, and keeping the small things.",
+    "posts": [
+      {
+        "key": "paris-0-photo",
+        "author": "traveler",
+        "at": "2026-09-18T09:00:00+02:00",
+        "text": "We stopped beside the Seine to look at the Eiffel Tower. I had seen it in pictures, but wanted a photo of this moment.",
+        "asset": "paris-tower",
+        "location": {
+          "name": "Eiffel Tower and Seine, Paris",
+          "latitude": 48.8584,
+          "longitude": 2.2945,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "paris-0-reply",
+        "author": "hana",
+        "at": "2026-09-18T10:15:00+02:00",
+        "text": "My favorite part was having no hurry to leave the river.",
+        "asset": null,
+        "location": {
+          "name": "Eiffel Tower and Seine, Paris",
+          "latitude": 48.8584,
+          "longitude": 2.2945,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "paris-1-photo",
+        "author": "traveler",
+        "at": "2026-09-19T09:00:00+02:00",
+        "text": "We went inside the Louvre Pyramid. We took a photo looking through the glass.",
+        "asset": "paris-louvre",
+        "location": {
+          "name": "Louvre Pyramid, Paris",
+          "latitude": 48.8606,
+          "longitude": 2.3376,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "paris-1-reply",
+        "author": "hana",
+        "at": "2026-09-19T10:15:00+02:00",
+        "text": "Let us use the river photo for the cover and keep the Louvre photo in the second chapter.",
+        "asset": null,
+        "location": {
+          "name": "Louvre Pyramid, Paris",
+          "latitude": 48.8606,
+          "longitude": 2.3376,
+          "basis": "sample"
+        }
+      }
+    ]
+  },
+  {
+    "id": "new-york",
+    "label": "New York · The city, at our pace",
+    "destination": "New York, United States",
+    "channel": "new-york-travel-journal",
+    "language": "en",
+    "description": "Fictional New York journal · Brooklyn Bridge and Central Park",
+    "title": "The city, at our pace",
+    "subtitle": "From the bridge to the park, two days of finding our own New York.",
+    "posts": [
+      {
+        "key": "new-york-0-photo",
+        "author": "traveler",
+        "at": "2026-08-22T09:00:00-04:00",
+        "text": "We walked onto Brooklyn Bridge and stopped to look at the Manhattan skyline. This is the photo I wanted to bring home.",
+        "asset": "new-york-bridge",
+        "location": {
+          "name": "Brooklyn Bridge, New York",
+          "latitude": 40.7061,
+          "longitude": -73.9969,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "new-york-0-reply",
+        "author": "hana",
+        "at": "2026-08-22T10:15:00-04:00",
+        "text": "The bridge is my favorite memory of our first day.",
+        "asset": null,
+        "location": {
+          "name": "Brooklyn Bridge, New York",
+          "latitude": 40.7061,
+          "longitude": -73.9969,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "new-york-1-photo",
+        "author": "traveler",
+        "at": "2026-08-23T09:00:00-04:00",
+        "text": "We spent our second day in Central Park and took a photo beside the lake.",
+        "asset": "new-york-park",
+        "location": {
+          "name": "Central Park, New York",
+          "latitude": 40.774,
+          "longitude": -73.971,
+          "basis": "sample"
+        }
+      },
+      {
+        "key": "new-york-1-reply",
+        "author": "hana",
+        "at": "2026-08-23T10:15:00-04:00",
+        "text": "It felt good to slow down after our walk across the bridge.",
+        "asset": null,
+        "location": {
+          "name": "Central Park, New York",
+          "latitude": 40.774,
+          "longitude": -73.971,
+          "basis": "sample"
+        }
+      }
+    ]
+  }
+]

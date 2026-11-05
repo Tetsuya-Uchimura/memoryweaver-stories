@@ -25,9 +25,13 @@ def instruction_text(body):
 
 
 class Worker:
-    def __init__(self, role):
+    def __init__(self, role, trip=None):
         self.role = role
-        self.store = Store()
+        self.root_store = Store()
+        from app.trips import trip_store
+        self.store = trip_store(self.root_store,trip) if trip else self.root_store
+        self.trip_id = trip
+        if trip:self.store.set("console",self.root_store.get("console"))
         state = self.store.get("switch")
         self.client = Switch(state["agents"][role], state["room_id"])
         self.mode = os.getenv("AI_MODE", "replay")
@@ -74,10 +78,12 @@ class Worker:
                         asset_ids.append(sample["id"])
                     else:
                         async with httpx.AsyncClient() as http:
-                            response = await http.post(os.getenv("WEB_URL", "http://localhost:8787") + "/internal/media", headers={"Authorization": "Bearer " + os.environ["WEB_INTERNAL_TOKEN"]}, files={"file": ("photo.jpg", data, "image/jpeg")})
+                            response = await http.post(os.getenv("WEB_URL", "http://localhost:8787") + "/internal/media", headers={"Authorization": "Bearer " + os.environ["WEB_INTERNAL_TOKEN"]}, files={"file": ("photo.jpg", data, "image/jpeg")}, params={"trip":self.trip_id} if getattr(self,"trip_id",None) else {})
                             response.raise_for_status()
                             asset_ids.append(response.json()["id"])
-            source = Source(id=entry["id"], author=entry["sender_name"], text=body, captured_at=timestamp, date_basis="captured" if match else "posted", asset_ids=asset_ids)
+            from app.locations import parse_location
+            body,location = parse_location(body)
+            source = Source(location=location,id=entry["id"], author=entry["sender_name"], text=body, captured_at=timestamp, date_basis="captured" if match else "posted", asset_ids=asset_ids)
             self.store.put("sources", source.model_dump())
 
     async def generate(self, entry, job_id=None):
@@ -91,17 +97,22 @@ class Worker:
         job = self.store.job(entry.get("body", ""), job_id or event_id)
         if not job:
             return
-        await self.report("I’m gathering the photographs and everyone’s words. Capture dates will guide the chapters; missing details stay unknown. · " + ("LIVE · Switch Console" if self.store.get("console") else self.mode.upper()), thread)
+        console = self.root_store.get("console") if hasattr(self,"root_store") else self.store.get("console")
+        demo = entry.get("body", "").startswith("@mw-collector [DEMO REPLAY]")
+        mode = "replay" if demo else ("live" if console else self.mode)
+        await self.report("I’m gathering the photographs and everyone’s words. Capture dates will guide the chapters; missing details stay unknown. · " + mode.upper() + (" · Switch Console" if console and mode=="live" else ""), thread)
         entries = await self.client.history()
         await self.collect(entries)
         sources = sorted(self.store.all("sources"), key=lambda s: s["captured_at"])
         if not sources:
             raise ValueError("Post memories and photographs before requesting an album")
-        console = self.store.get("console")
-        payload = dict(job=job, sources=sources, assets=self.store.all("assets"), previous=self.store.revision(), mode="live" if console else self.mode)
+        self.store.set("console",console)
+        self.store.set("job-mode:"+job["id"],mode)
+        trip=self.store.get("trip",{})
+        payload = dict(job=job, sources=sources, assets=self.store.all("assets"), previous=self.store.revision(), mode=mode, language=trip.get("language","ja"), destination=trip.get("destination"), trip_id=trip.get("id"), trip_title=trip.get("title"), trip_subtitle=trip.get("subtitle"))
         document_id = await self.client.document("evidence-" + hashlib.sha256(job["id"].encode()).hexdigest()[:12], payload)
         await self.report(f"Collected {len(sources)} source posts from {len(set(s['author'] for s in sources))} contributors. Evidence is shared in the Switch room document.", thread)
-        if console:
+        if console and mode=="live":
             from agents.console import start
             await start(self, document_id, payload, thread)
         else:
@@ -112,8 +123,11 @@ class Worker:
         if self.store.handled(self.role, event_id) or entry.get("kind") != "message":
             return
         if self.role in {"storyteller", "editor"} and self.store.get("console"):
-            self.store.finish_event(self.role, event_id)
-            return  # Console owns these roles; never invoke Docker provider CLIs.
+            incoming=re.search(r"MW_HANDOFF (\{.*\})",entry.get("body",""),re.S)
+            job_id=json.loads(incoming[1]).get("job",{}).get("id") if incoming else None
+            if self.store.get("job-mode:"+str(job_id))!="replay":
+                self.store.finish_event(self.role,event_id)
+                return  # Only an explicitly requested demo uses Docker replay here.
         body = entry.get("body", "")
         thread = entry.get("thread_id") or event_id
         human = entry.get("sender_kind") == "user"
@@ -136,22 +150,25 @@ class Worker:
                 raise ValueError("先に旅行記を作成してください。指定された版が見つかりません。")
             self.store.queue_delivery(current["version"])
             await self.report(f"旅行記 v{current['version']} の添付を確認し、未送信なら再送します。", thread)
-        elif self.role == "publisher" and not human and self.store.get("console"):
+        if self.role == "publisher" and not human and self.store.get("console"):
             from agents.console import receive
             if await receive(self, entry):
                 self.store.finish_event(self.role, event_id)
                 return
             # Old Docker handoffs cannot commit a book in Console mode.
-        elif self.role != "collector" and not human:
+        if self.role != "collector" and not human:
             match = re.search(r"MW_HANDOFF (\{.*\})", body, re.S)
             expected = "mw-" + ROLES[ROLES.index(self.role) - 1]
             if match and entry.get("sender_kind") == "agent" and entry.get("sender_name") == expected:
                 handoff = json.loads(match[1])
                 payload = await self.client.load(handoff["document_id"])
                 job = payload["job"]
+                if self.store.get("console") and self.store.get("job-mode:"+job["id"])!="replay":
+                    self.store.finish_event(self.role,event_id)
+                    return
                 if self.role == "storyteller":
-                    await self.report("Weaving the memories into a story. Every chapter will carry the posts it came from. · " + self.mode.upper(), thread)
-                    if self.mode == "live":
+                    await self.report("Weaving the memories into a story. Every chapter will carry the posts it came from. · " + payload["mode"].upper(), thread)
+                    if payload["mode"] == "live":
                         album = await harness("claude", payload)
                     else:
                         await asyncio.sleep(2)
@@ -162,7 +179,7 @@ class Worker:
                     await self.client.handoff("editor", document_id, job, thread)
                 elif self.role == "editor":
                     await self.report("Checking the story against the original words, photo references, and dates. Unsupported details will be removed or returned for clarification.", thread)
-                    if self.mode == "live":
+                    if payload["mode"] == "live":
                         reviewed = await harness("codex", payload)
                     else:
                         await asyncio.sleep(2)
@@ -251,5 +268,14 @@ class Worker:
         await asyncio.gather(*tasks)
 
 
+async def run_role(role):
+    root=Store()
+    trips=root.get("trips")
+    if not trips:
+        await Worker(role).run()
+    else:
+        await asyncio.gather(*(Worker(role,t["id"]).run() for t in trips))
+
+
 if __name__ == "__main__":
-    asyncio.run(Worker(os.environ["AGENT_ROLE"]).run())
+    asyncio.run(run_role(os.environ["AGENT_ROLE"]))

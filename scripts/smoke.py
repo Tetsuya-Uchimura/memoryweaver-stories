@@ -16,7 +16,9 @@ from scripts.verify_release import verify
 async def main():
     if Store().get("console") or os.getenv("AI_MODE", "replay") != "replay" or os.getenv("PUBLISH_ENABLED") == "true":
         raise SystemExit("Smoke test requires AI_MODE=replay and PUBLISH_ENABLED=false")
-    store = Store()
+    root=Store()
+    from app.trips import trip_store
+    store=trip_store(root) if root.get("trips") else root
     if not store.get("seed:complete"):
         subprocess.run([sys.executable, "-m", "scripts.seed"], check=True)
     channel = store.get("switch")["channel_id"]
@@ -58,7 +60,7 @@ async def main():
             assert post["user_id"] == publisher.json()["id"]
             assert not post["root_id"]  # directly visible in the original channel
             assert revision["album"]["title"] in post["message"]
-            assert f"/?version={version}" in post["message"]
+            assert f"version={version}" in post["message"]
             received = {}
             for file_id in post["file_ids"]:
                 info = await mm.get(f"/api/v4/files/{file_id}/info", headers=headers)
@@ -71,13 +73,14 @@ async def main():
             assert hashlib.sha256(received["application/pdf"]).hexdigest() == receipt["pdf_sha256"]
             assert hashlib.sha256(received["image/jpeg"]).hexdigest() == revision["asset_hashes"][revision["album"]["cover_asset_id"]]
             async with httpx.AsyncClient() as web:
-                download = await web.get(os.getenv("WEB_URL", "http://web:8787") + f"/api/revisions/{version}/pdf")
+                download = await web.get(os.getenv("WEB_URL", "http://web:8787") + f"/api/revisions/{version}/pdf",params={"trip":store.get("trip")["id"]} if store.get("trip") else {})
                 download.raise_for_status()
                 assert download.content == received["application/pdf"]
             print(f"PASS Mattermost delivery v{version}: Publisher bot, title, version URL, cover and downloadable PDF in one channel post")
 
         before = (store.revision() or {}).get("version", 0)
-        await post("@mw-collector 今回の沖縄旅行をアルバムにして")
+        target="kyoto-bamboo" if store.get("trip",{}).get("id")=="kyoto" else "sunset"
+        await post("@mw-collector Create a travel album from this room in English." if store.get("trip") else "@mw-collector 今回の沖縄旅行をアルバムにして")
         first = await wait_version(before)
         assert len(first["album"]["chapters"]) == 3
         assert len(first["sources"]) == 6
@@ -86,8 +89,8 @@ async def main():
         print("PASS generation: real Mattermost posts → Switch documents → three-chapter preview")
         await wait_for_artifacts(first)
 
-        await post("@mw-collector 表紙を夕日の写真に変更して")
-        second = await wait_version(first["version"], lambda r: r["album"]["cover_asset_id"] == "sunset")
+        await post("@mw-collector Change the cover to photo ID "+target)
+        second = await wait_version(first["version"], lambda r: r["album"]["cover_asset_id"] == target)
         assert store.revision(first["version"])["album"]["cover_asset_id"] == first["album"]["cover_asset_id"]
         print("PASS revision: sunset cover, prior version preserved")
         await wait_for_artifacts(second)
@@ -95,7 +98,7 @@ async def main():
         await post("@mw-collector 2日目の文章をもっと感動的にして")
         third = await wait_version(second["version"])
         assert third["album"]["chapters"][1]["body"] != second["album"]["chapters"][1]["body"]
-        assert third["album"]["cover_asset_id"] == "sunset"
+        assert third["album"]["cover_asset_id"] == target
         print("PASS revision: day-two prose updated, sunset cover preserved")
         await wait_for_artifacts(third)
 
@@ -122,7 +125,7 @@ async def main():
         print("PASS privacy: stale version approval rejected")
 
         # Another real human in the same room cannot approve the owner's publication.
-        hana = await mm.post("/api/v4/users/login", json={"login_id": "hana", "password": store.get("seed:hana_password")})
+        hana = await mm.post("/api/v4/users/login", json={"login_id": "hana", "password": root.get("seed:hana_password")})
         hana.raise_for_status()
         await post(approval_command(third), {"Authorization": "Bearer " + hana.headers["token"]})
         await asyncio.sleep(3)

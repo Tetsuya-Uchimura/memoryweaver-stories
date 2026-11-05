@@ -17,7 +17,7 @@ CONSENT = "I CONSENT TO PUBLIC PHOTOS AND TEXT"
 
 def public_book(revision):
     album = revision["album"]
-    return {**album, "chapters": [{k: v for k, v in c.items() if k not in {"source_ids", "quote_source_id"}} for c in album["chapters"]]}
+    return {**album, **({"trip_id":revision["trip_id"]} if revision.get("trip_id") else {}), "places": [{k:v for k,v in p.items() if k!="source_id"} for p in revision.get("places",[])], "photo_locations":revision.get("photo_locations",{}), "chapters": [{k: v for k, v in c.items() if k not in {"source_ids", "quote_source_id"}} for c in album["chapters"]]}
 
 
 def selected_assets(revision):
@@ -59,12 +59,19 @@ def build_export(store, revision, approval):
         files["assets/" + asset_id + ".jpg"] = contents
     e = html.escape
     image = lambda aid: "assets/" + aid + ".jpg"
+    from app.locations import map_url
+    def photo_place(aid):
+        p=book.get("photo_locations",{}).get(aid)
+        return "<br>Location not supplied" if not p else "<br>Location: "+e(p["name"])+" · "+e(p["basis"])+' · <a href="'+e(map_url(p))+'">Open map</a>'
     chapters = []
     for c in book["chapters"]:
-        photos = ''.join(f'<figure><img src="{image(aid)}" alt="{e(assets[aid]["label"])}"><figcaption>{e(assets[aid]["credit"])}</figcaption></figure>' for aid in c["asset_ids"])
+        photos = ''.join(f'<figure><img src="{image(aid)}" alt="{e(assets[aid]["label"])}"><figcaption>{e(assets[aid]["credit"])}{photo_place(aid)}</figcaption></figure>' for aid in c["asset_ids"])
         chapters.append(f'<section class="chapter"><div class="chapter-heading"><span class="chapter-number">{c["day"]:02}</span><div><div class="chapter-date">{e(c["date"])}</div><h2>{e(c["title"])}</h2></div></div><div class="chapter-layout"><div class="chapter-images">{photos}</div><div class="chapter-prose"><p>{e(c["body"])}</p><blockquote>「{e(c["quote"])}」</blockquote></div></div></section>')
     credits = ''.join(f'<p>{e(assets[aid]["label"])} · {e(assets[aid]["credit"])}' + (f' · <a href="{e(assets[aid]["source_url"])}">Original</a> · <a href="{e(assets[aid]["license_url"])}">License</a>' if assets[aid].get("sample") else '') + '</p>' for aid in ids)
-    doc = f'''<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>{e(book["title"])} · MemoryWeaver</title><link rel="stylesheet" href="style.css"></head><body class="reading"><main><article class="book"><section class="cover"><img src="{image(book["cover_asset_id"])}" alt="Travel journal cover"><div class="cover-top">A MEMORYWEAVER TRAVEL JOURNAL · V{revision["version"]}</div><div class="cover-content"><div class="cover-location">{e(book["location"])}</div><h1 class="cover-title">{e(book["title"])}</h1><div class="cover-subtitle">{e(book["subtitle"])}</div><div class="cover-bottom">{e(book["date_label"])}</div></div></section>{''.join(chapters)}<div class="book-end"><span class="weave">✳</span><p>思い出は、これからも。</p><small>WOVEN TOGETHER WITH MEMORYWEAVER · {e(revision["mode"].upper())}</small></div></article><footer class="photo-credit">{credits}<p>Sample photographs illustrate a fictional trip. Published with explicit human approval.</p></footer></main></body></html>'''
+    places=""
+    if book.get('places'):
+        places='<section class="journey-places"><h2>Places we remember</h2>'+''.join('<p><a href="'+e(map_url(p))+'">'+e(p['name'])+'</a> · '+e(p['basis'])+'</p>' for p in book['places'])+'</section>'
+    doc = f'''<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>{e(book["title"])} · MemoryWeaver</title><link rel="stylesheet" href="style.css"></head><body class="reading"><main><article class="book"><section class="cover"><img src="{image(book["cover_asset_id"])}" alt="Travel journal cover"><div class="cover-top">A MEMORYWEAVER TRAVEL JOURNAL · V{revision["version"]}</div><div class="cover-content"><div class="cover-location">{e(book["location"])}</div><h1 class="cover-title">{e(book["title"])}</h1><div class="cover-subtitle">{e(book["subtitle"])}</div><div class="cover-bottom">{e(book["date_label"])}</div></div></section>{places}{''.join(chapters)}<div class="book-end"><span class="weave">✳</span><p>思い出は、これからも。</p><small>WOVEN TOGETHER WITH MEMORYWEAVER · {e(revision["mode"].upper())}</small></div></article><footer class="photo-credit">{credits}<p>Sample photographs illustrate a fictional trip. Published with explicit human approval.</p></footer></main></body></html>'''
     files["index.html"] = doc.encode()
     files["_headers"] = b"/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: no-referrer\n  Content-Security-Policy: default-src 'none'; img-src 'self'; style-src 'self'; base-uri 'none'; frame-ancestors 'none'\n"
     manifest = {"schema": 1, "version": revision["version"], "digest": publication_digest(revision), "asset_ids": ids, "asset_hashes": revision["asset_hashes"], "book": book, "consent": CONSENT, "approved_at": approval["created"], "approver_hash": hashlib.sha256(approval["user_id"].encode()).hexdigest(), "files": {p: hashlib.sha256(b).hexdigest() for p, b in files.items()}}

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "kyoto-gates",
+    "url": "/static/assets/kyoto-gates.jpg",
+    "label": "Fushimi Inari Taisha Torii entrance.jpg",
+    "sample": true,
+    "credit": "Immanuelle · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Fushimi%20Inari%20Taisha%20Torii%20entrance.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "kyoto-bamboo",
+    "url": "/static/assets/kyoto-bamboo.jpg",
+    "label": "Bamboo Grove, Arashiyama, Kyoto, Japan.jpg",
+    "sample": true,
+    "credit": "Basile Morin · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Bamboo%20Grove%2C%20Arashiyama%2C%20Kyoto%2C%20Japan.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "kyoto-temple",
+    "url": "/static/assets/kyoto-temple.jpg",
+    "label": "Kyoto from Kiyomizu-Dera.jpg",
+    "sample": true,
+    "credit": "Ray in Manila · CC BY 2.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Kyoto%20from%20Kiyomizu-Dera.jpg",
+    "license_url": "https://creativecommons.org/licenses/by/2.0/"
+  },
+  {
+    "id": "paris-tower",
+    "url": "/static/assets/paris-tower.jpg",
+    "label": "The Eiffel Tower from the Seine.jpg",
+    "sample": true,
+    "credit": "DiscoA340 · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:The%20Eiffel%20Tower%20from%20the%20Seine.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "paris-louvre",
+    "url": "/static/assets/paris-louvre.jpg",
+    "label": "Inside the Louvre Pyramid July 2025.jpg",
+    "sample": true,
+    "credit": "Dmarcovitz · CC0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Inside%20the%20Louvre%20Pyramid%20July%202025.jpg",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+  },
+  {
+    "id": "new-york-bridge",
+    "url": "/static/assets/new-york-bridge.jpg",
+    "label": "NYC Skyline Brooklyn Bridge.jpg",
+    "sample": true,
+    "credit": "NYC Guru · CC BY-SA 4.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:NYC%20Skyline%20Brooklyn%20Bridge.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "id": "new-york-park",
+    "url": "/static/assets/new-york-park.jpg",
+    "label": "Central Park - The Lake panorama (New York) (31368593058).jpg",
+    "sample": true,
+    "credit": "VillageHero · CC BY-SA 2.0 · resized, metadata removed",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Central%20Park%20-%20The%20Lake%20panorama%20%28New%20York%29%20%2831368593058%29.jpg",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0/"
+  }
+]

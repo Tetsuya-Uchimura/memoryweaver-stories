@@ -6,7 +6,7 @@ A photograph of the sea. A message about the biggest whale shark you have ever s
 
 Built for [Flip the Switch](https://www.wemakedevs.org/hackathons/switch), Track 2: Best Personal or Creative Workflow.
 
-![MemoryWeaver private travel-book studio, showing the fictional Okinawa replay sample](docs/screenshots/studio.jpg)
+![MemoryWeaver private travel-book studio, showing the fictional Kyoto sample with native AI generation](docs/screenshots/studio.jpg)
 
 ## Judge setup: reproduce the live Switch Console workflow
 
@@ -33,7 +33,7 @@ python3 scripts/dev.py up
 python3 scripts/dev.py status
 ```
 
-`up` fetches and verifies the official Switch source, builds upstream Dockerfiles, starts PostgreSQL and Mattermost, runs Switch's official setup, registers four tool/workflow agent identities, creates the private **okinawa-memories** room, and starts MemoryWeaver. It generates fresh local secrets in an ignored, owner-readable `.env`. Do not copy the developer's `.env` or authentication files.
+`up` fetches and verifies the official Switch source, builds upstream Dockerfiles, starts PostgreSQL and Mattermost, runs Switch's official setup, registers four tool/workflow agent identities, creates the private **kyoto-travel-journal** room, and starts MemoryWeaver. It generates fresh local secrets in an ignored, owner-readable `.env`. Do not copy the developer's `.env` or authentication files.
 
 Wait for the setup/bootstrap jobs to exit successfully and for Mattermost and the web service to become healthy. A new installation has no book yet.
 
@@ -58,7 +58,7 @@ Use the values generated **on your machine**:
 | Mattermost username | `MATTERMOST_USER` from the command output; default: `traveler` |
 | Mattermost password | `MATTERMOST_USER_PASSWORD` from the command output |
 
-The Switch and Mattermost passwords are different. Keep the output private; no fixed developer password is needed. Sign in to Mattermost in a browser, select the **memoryweaver** team, and open **okinawa-memories**.
+The Switch and Mattermost passwords are different. Keep the output private; no fixed developer password is needed. Sign in to Mattermost in a browser, select the **memoryweaver** team, and open **kyoto-travel-journal**.
 
 ### 3. Authenticate providers and connect Switch Console to Docker
 
@@ -66,7 +66,7 @@ The Switch and Mattermost passwords are different. Keep the output private; no f
 2. From Console's server selector, choose to connect to an existing server. Enter **Name: `MemoryWeaver Docker`** and **Server address: `http://localhost:8000`**, then **Add server**.
 3. On **Sign in to MemoryWeaver Docker**, enter the Gateway email/password from step 2.
 4. On **Link your messaging accounts**, link the Docker Mattermost **traveler** account. If it already shows **Mattermost · @traveler · Linked**, click **Done**.
-5. Check the selected server is **MemoryWeaver Docker** and shows **Connected**. **Your Rooms** should include **okinawa-memories**.
+5. Check the selected server is **MemoryWeaver Docker** and shows **Connected**. **Your Rooms** should include **kyoto-travel-journal**.
 
 Console may also have its own **Local Switch server**. Use the **MemoryWeaver Docker** connection for the remaining steps. The Docker bootstrap has already configured the Mattermost connector and room; no additional connector, SSH host, or server-managed agent controller is needed. The room's **Chat → Open in Mattermost** button opens the actual conversation; externally bridged chat is not embedded in Console.
 
@@ -103,7 +103,7 @@ Under **MemoryWeaver Docker → Your Agents → +**, add the following **two sep
 | Bypass permissions | **Off** | **Off** |
 | Who can talk to your agent | **Anyone** | **Anyone** |
 
-Click **Add agent** for each, open its details, and use **Add to room → okinawa-memories**. You can add them to the other rooms too. An addressing rule with `Rooms: any` does **not** automatically join all rooms. **Anyone** allows handoffs from bootstrap-owned Collector/Publisher agents, which have a different owner from your Console agents; room membership still bounds access.
+Click **Add agent** for each, open its details, and use **Add to room → kyoto-travel-journal**. Also add both to `paris-travel-journal` and `new-york-travel-journal` for live work in those rooms. Existing bound agents are invited to the new rooms by bootstrap when upgrading. An addressing rule with `Rooms: any` does **not** automatically join all rooms. **Anyone** allows handoffs from bootstrap-owned Collector/Publisher agents, which have a different owner from your Console agents; room membership still bounds access.
 
 The server may say **agent management is not turned on**. This is expected: Console runs the two provider sessions on your computer. Do not recreate the bootstrap agents `mw-collector`, `mw-storyteller`, `mw-editor`, or `mw-publisher`; the new native agents have their own distinct names above.
 
@@ -123,23 +123,33 @@ Console runtime bound: mw-storyteller-claude → mw-editor-codex → mw-publishe
 
 The helper checks provider types, room membership and addressing, then saves the two authoritative Switch IDs and names. It does not copy provider credentials. Keep **`PUBLISH_ENABLED=false`** in `.env`.
 
-For this Console workflow, **do not change `AI_MODE` to `live` and do not run `dev.py auth`**: those are for the separate container-CLI option below. The saved Console binding selects live native inference and idles the original Docker writer/reviewer roles. The web UI should show **LIVE AI**, with two Console-managed model roles and two connected Docker tool agents. That label indicates runtime configuration; actual completion is confirmed by Publisher's saved-version post.
+For this Console workflow, **do not change `AI_MODE` to `live` and do not run `dev.py auth`**: those are for the separate container-CLI option below. The saved Console binding selects live native inference and idles the original Docker writer/reviewer roles. The sidebar identifies the Console-managed roles. A book keeps its **REPLAY DEMO** label until a real native generation succeeds; the saved native edition then displays **LIVE AI**. Publisher’s saved-version post confirms completion.
 
 ### 7. Post the safe sample and request a book in Mattermost
 
 ```sh
-python3 scripts/dev.py seed
+python3 scripts/dev.py seed --all --generate
 ```
 
-This posts **six fictional memories and four licensed illustrative photos**, deliberately out of order, from **traveler** and **hana**. It does not generate a replay book. Re-running `seed` does not duplicate the sample.
+This creates three separate private, English-language conversations and finished **REPLAY DEMO** books through Switch:
 
-In **Mattermost → memoryweaver → okinawa-memories**, send:
+| Journal | Mattermost channel | Fictional sample |
+| --- | --- | --- |
+| Kyoto, Japan (default) | `kyoto-travel-journal` | 6 memories, 3 photos: Fushimi Inari, Arashiyama bamboo grove, Kiyomizu-dera |
+| Paris, France | `paris-travel-journal` | 4 memories, 2 photos: Eiffel Tower / Seine and Louvre Pyramid |
+| New York, United States | `new-york-travel-journal` | 4 memories, 2 photos: Brooklyn Bridge and Central Park |
+
+Posts arrive out of order from **traveler** and **hana**. The place pins are explicitly marked as approximate fictional landmarks, not original camera GPS. The initial books are deterministic fixtures, not claimed native inference. `seed --all` does not duplicate the posts; adding `--generate` explicitly requests new replay editions. Choose a book with **Your journals** in the sidebar.
+
+Now request a real native generation in the Kyoto channel:
+
+In **Mattermost → memoryweaver → kyoto-travel-journal**, send:
 
 ```text
-@mw-collector 今回の沖縄旅行を日本語のアルバムにして。思い出と写真をすべて残して、公開はしないでください。
+@mw-collector Make an English travel journal of our Kyoto trip. Keep all six memories, all three photos and the supplied sample locations. Do not publish.
 ```
 
-This asks: “Make a Japanese album of this Okinawa trip, retain every memory/photo, and do not publish it.” You can instead request an English book with `@mw-collector Make an English travel album of our Okinawa trip. Keep all memories and photographs. Do not publish it.`
+Kyoto is the default judge journey. Use the same request in another trip’s channel to generate that trip independently; sources, drafts, versions and PDF deliveries are scoped to that room.
 
 Keep Docker and Console running. Collector creates a Switch evidence document, Claude writes a draft, Codex reviews it, and Publisher saves the result. Allow several minutes for inference; respond to factual clarification requests if needed. The thread contains `MW_CONSOLE`, `MW_DRAFT`, and `MW_REVIEW` document references. If a provider is unavailable, the workflow reports/waits for that problem; it does not silently substitute replay writing.
 
@@ -147,29 +157,29 @@ Keep Docker and Console running. Collector creates a Switch evidence document, C
 
 Publisher posts directly to the same Mattermost channel with:
 
-- The travel-book title and a version-specific web URL, such as `http://localhost:8787/?version=1`.
+- The travel-book title and a version-specific web URL, such as `http://localhost:8787/?trip=kyoto&version=2`.
 - A cover-preview image and the actual downloadable PDF, attached together.
 - A **LIVE** edition marker. No public deployment is needed.
 
-Open the link, scroll through the book, inspect a chapter's original-source citations, and open the PDF. In a fresh sample environment, check that the six source posts and four photos were retained. The developer's existing v13, seventh source post and fifth private photo are **not** bundled in a fresh judge installation.
+Open the link, scroll through the book, inspect a chapter's original-source citations, and open the PDF. In a fresh sample environment, check that the six source posts and three photos were retained. An upgraded developer installation retains the old Okinawa book separately; a fresh judge clone contains only the new fictional world-trip fixtures, without the developer’s private uploads.
 
 Next, ask for a cover edit:
 
 ```text
-@mw-collector 表紙を夕日の写真（sunset）に変更してください。ほかの写真・思い出・本文はすべて保持して、公開はしないでください。
+@mw-collector Please use the bamboo grove photo (kyoto-bamboo) as the cover. Keep every other photo, memory, location and chapter. Do not publish.
 ```
 
-If the cover already uses sunset, request **海の写真（coast）** instead so the change is visible. Wait for a **new Publisher completion post and PDF**, then check the new cover and unchanged memories. Older completion links retain their original editions; open `http://localhost:8787/` to follow the latest version. Send one editing request at a time.
+If the cover already uses bamboo, request **the shrine gates (`kyoto-gates`)** instead so the change is visible. Wait for a **new Publisher completion post and PDF**, then check the new cover and unchanged memories. Older completion links retain their original editions; open `http://localhost:8787/` to follow the latest version. Send one editing request at a time.
 
 ### 9. Optional automated verification and restart
 
 For the sample workflow, this observer checks an already requested native generation, then **posts an additional real cover-change test** and verifies its result:
 
 ```sh
-python3 scripts/dev.py compose run --rm --no-deps -T bootstrap python -m scripts.console_smoke --after 0 --edit
+python3 scripts/dev.py compose run --rm --no-deps -T bootstrap python -m scripts.console_smoke --trip kyoto --after 1 --edit
 ```
 
-`--after 0` works for the first book in a new installation or observes the latest completed native book. For a later request, use the saved version number from before that request. The observer checks the native draft receipt, LIVE saved version, Publisher bot identity, version URL, and PDF/cover attachment byte hashes against local artifacts. It also checks that publication state did not change. The default timeout is 600 seconds per generation; `--timeout 1200` allows longer provider latency. It requires the sample's `coast` and `sunset` assets. It sends no public approval.
+`--after 1` observes a native edition newer than the seeded replay v1. Use `--after 0` when no book existed before your native request. For a later request, use the saved version number from before that request. The observer checks the native draft receipt, LIVE saved version, Publisher bot identity, version URL, and PDF/cover attachment byte hashes against local artifacts. It also checks that publication state did not change. The default timeout is 600 seconds per generation; `--timeout 1200` allows longer provider latency. It requires at least two source photos. It sends no public approval.
 
 To stop and resume the same environment:
 
@@ -185,9 +195,9 @@ Volumes retain the book, local accounts and native role binding. Reopen Console,
 | Symptom | Check / recovery |
 | --- | --- |
 | Docker ports already allocated | Stop the conflicting stack; these instructions use the default ports. Console's own local server is a separate environment. |
-| No `okinawa-memories` in Console | Select **MemoryWeaver Docker**, verify `http://localhost:8000` and successful bootstrap, then check the linked traveler account. |
+| No `kyoto-travel-journal` in Console | Select **MemoryWeaver Docker**, verify `http://localhost:8000` and successful bootstrap, then check the linked traveler account. |
 | `bind` cannot find an agent / wrong provider | Match the two exact names/provider choices in step 5 on the Docker server, not Console's Local Switch server. |
-| `bind` requests membership or addressing changes | Add both agents to `okinawa-memories` and set **Who can talk → Anyone**. Then retry binding. |
+| `bind` requests membership or addressing changes | Add both agents to `kyoto-travel-journal` and set **Who can talk → Anyone**. Then retry binding. |
 | `bind` reports a working job | Wait for the current request to finish before changing runtime bindings. |
 | Model unsupported, signed out, or tool permission pending | Inspect the native agent in Console, select an available model, sign in/approve the specific prompt if needed, and restart the affected session. Docker authentication does not fix a host Console provider. |
 | Requests stop after closing Console | Reopen Console and restore its provider sessions. Docker tool agents remain running, but cannot replace the native models. |
@@ -205,7 +215,7 @@ Use this alternative in a **fresh environment without a Console binding** when y
 
 ```sh
 python3 scripts/dev.py up
-python3 scripts/dev.py seed --generate
+python3 scripts/dev.py seed --all --generate
 ```
 
 The default `.env` selects **REPLAY DEMO**: real Switch communication and documents with deterministic extractive writing, not live model inference. It requires no provider or Cloudflare account; repository access is still needed to obtain the source. After the first build, `up` reuses the same accounts and volumes. No developer credentials are bundled. The replay smoke test below refuses Console-bound data; do not use it on your live native book.
@@ -227,12 +237,29 @@ Change `AI_MODE=replay` to `AI_MODE=live` in your generated `.env`, then run:
 
 ```sh
 python3 scripts/dev.py up
-python3 scripts/dev.py seed --message '@mw-collector 今回の沖縄旅行をアルバムにして'
+python3 scripts/dev.py seed --message '@mw-collector 今回の京都旅行をアルバムにして'
 ```
 
 In live mode, Storyteller calls **Claude Code** with a structured album schema; Editor calls **Codex** with a separate structured editorial review. Collector and Publisher are deterministic tool agents. Optional `CLAUDE_MODEL` and `CODEX_MODEL` settings let you select models your accounts can access; otherwise the authenticated CLIs choose their defaults. Live results are never silently replaced by replay output.
 
 The container-CLI option uses custom Switch workers. Switch Console is optional for that path and required for the GUI-first path above. Neither option bypasses provider authentication.
+
+## Locations and photo capture places
+
+Books display a **Places we remember** section and a location beneath each photograph, in both the web book and PDF. The local interactive coordinate sketch plots supplied pins without fetching tiles or sending coordinates to an external service. Its dashed lines connect memories, not recorded routes. **Open map** loads OpenStreetMap only when clicked.
+
+- A place supplied with a post is labeled **Location shared by the traveler**. Use `[Location: Place name | latitude,longitude]` on a separate caption line; the coordinates are optional, and a name-only location is not silently geocoded.
+- If an uploaded photograph contains valid EXIF GPS, the sanitizer extracts a separate location record, labels it **Photo GPS**, and then removes EXIF from the served JPEG. It does not infer an address or landmark name. Some messaging/export tools strip GPS before upload; missing GPS remains **Location not supplied**.
+- The dummy trips use **Fictional sample · approximate landmark** pins. These are authored sample itinerary coordinates, not the original stock photographer’s camera position or evidence that the fictional travelers appear in a photo.
+
+Example memory, with a capture date and user-supplied place:
+
+```text
+[2026-10-12T09:00:00+09:00] [Location: Fushimi Inari Taisha, Kyoto | 34.9671,135.7727]
+We walked beneath the gates and wanted to keep this photograph.
+```
+
+A stated post location takes precedence over image GPS for that post’s photos. Model-written location guesses are not used to populate maps. Saved editions snapshot the locations, so later metadata changes do not rewrite old books. The publication review and exact-version digest include the locations selected for that edition; no coordinates or photos are published merely by generating a local book. Each travel room has its own database, assets, revision history and delivery queue. New URLs include `?trip=kyoto&version=N`; old unqualified Okinawa completion links remain readable after upgrading.
 
 ## Make it personal
 
@@ -247,9 +274,9 @@ An explicit capture date takes precedence over upload time. Without one, the upl
 Ask in Mattermost:
 
 ```text
-@mw-collector 今回の沖縄旅行をアルバムにして
+@mw-collector 今回の京都旅行をアルバムにして
 @mw-collector 2日目の文章をもっと感動的にして
-@mw-collector 表紙を夕日の写真に変更して
+@mw-collector 表紙を竹林の写真に変更して
 @mw-collector 妻が投稿したコメントも反映して
 ```
 

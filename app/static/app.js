@@ -3,12 +3,14 @@ const esc = (value = '') => String(value).replace(/[&<>"']/g, (c) => ({'&':'&amp
 const names = {collector:'Collector',storyteller:'Storyteller',editor:'Editor',publisher:'Publisher'};
 const symbols = {collector:'⌘',storyteller:'✧',editor:'✎',publisher:'↗'};
 const jobs = {collector:'Gathers the little things',storyteller:'Finds the words',editor:'Shapes the story',publisher:'Makes it yours to keep'};
+let currentTrip=null, availableTrips=[];
+const tripAPI=path=>path+(currentTrip ? (path.includes("?")?"&":"?")+new URLSearchParams({trip:currentTrip}) : "");
 let state = null, view = 'story', bookView = 'book', pinned = null, lastRender = '', stream;
 const panel = $('#panel');
 const asset = (id) => state?.assets.find(a => a.id === id);
 const photoURL = (id) => {
   const url = asset(id)?.url || '/static/assets/coast.jpg';
-  return /^\/(?:static\/assets\/[a-z-]+\.jpg|media\/[a-f0-9]+\.jpg)$/.test(url) ? url : '/static/assets/coast.jpg';
+  return /^\/(?:static\/assets\/[a-z-]+\.jpg|media\/(?:trips\/[a-z-]+\/)?[a-f0-9]+\.jpg)$/.test(url) ? url : '/static/assets/coast.jpg';
 };
 const date = (v) => new Date(v).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
 const selected = () => pinned || state?.revision;
@@ -28,10 +30,13 @@ async function copy(text) {
   catch { toast('Select and copy the text shown in the dialog.'); }
 }
 function gettingStarted() {
-  dialog('A LITTLE HELP GETTING STARTED', `<h2>Bring your memories.<br>We’ll find the thread.</h2><p>MemoryWeaver is a shared studio in Mattermost. Four teammates work through Switch to turn the words and photographs you share into a travel book.</p><h3>1 · Add the safe sample</h3><p>In your project terminal, run this once. Six fictional memories and four licensed photos will appear in your private Mattermost channel.</p><code>python3 scripts/dev.py seed --generate</code><h3>2 · Watch it come together</h3><p>Open “The weaving room” to follow the real Switch handoffs. This page updates automatically when the Publisher finishes.</p><h3>3 · Make it feel like you</h3><p>In Mattermost, ask “表紙を夕日の写真に変更して” or “2日目の文章をもっと感動的にして”. The next version stays private.</p><p><strong>${state?.mode === 'live' ? 'Live mode uses your authenticated Claude Code and Codex accounts.' : 'Replay demo uses an extractive sample renderer, with real Mattermost and Switch communication. It does not call AI models. Authenticate the two CLIs and set AI_MODE=live to use live AI.'}</strong></p><a class="primary" href="http://localhost:8065/memoryweaver/channels/okinawa-memories" target="_blank" rel="noopener">Open the Mattermost studio ↗</a>`);
+  dialog('A LITTLE HELP GETTING STARTED', `<h2>Bring your memories.<br>We’ll find the thread.</h2><p>Share photographs and small memories in your trip’s private Mattermost channel. Your teammates use Switch to turn them into a book.</p><h3>1 · Choose your journey</h3><p>Explore Kyoto, Paris or New York with the journal selector. Each has its own conversation, photographs and versions. The fictional starter books are labeled Replay Demo.</p><h3>2 · Make it yours</h3><p>After connecting your providers using the README, ask in Mattermost: “@mw-collector Create an English travel journal from our memories. Keep the photos and supplied locations.” Live editions use your authenticated Claude Code and Codex sessions.</p><h3>3 · Keep the places too</h3><p>GPS-equipped photographs can supply coordinates. You can also share a place name with a memory. Missing places stay unknown; sample pins are explicitly fictional.</p><p>Publisher sends your book link, cover preview and PDF back to the same channel. Ask for a new cover or revise the wording whenever you like.</p><a class="primary" href="${esc(state?.mattermost_url || 'http://localhost:8065')}" target="_blank" rel="noopener">Open this trip in Mattermost ↗</a>`);
 }
 function edit() {
-  dialog('HUMAN WORDS. SHARED CREATIVITY.', `<h2>What would you like to change?</h2><p>Tell your team in your own words. They’ll revisit the source memories, share a draft, and check it before updating your preview.</p><textarea id="edit-prompt" aria-label="Your editing instruction" placeholder="例えば、2日目の文章をもっと感動的にして…"></textarea><div class="suggestions"><button data-prompt="表紙を夕日の写真に変更して">A sunset cover</button><button data-prompt="2日目の文章をもっと感動的にして">A more heartfelt day two</button><button data-prompt="妻が投稿したコメントも反映して">Include everyone’s words</button></div><button class="primary" id="copy-edit">Copy instruction for Mattermost ↗</button><p>The instruction is copied for you to send in Mattermost. Your conversation and the agents’ work stay visible to the whole team.</p><a class="text-button" href="http://localhost:8065/memoryweaver/channels/okinawa-memories" target="_blank" rel="noopener">Open Mattermost ↗</a>`);
+  const cover=selected()?.album.cover_asset_id || '';
+  const subject=state?.trip?.id==='kyoto' ? (cover==='kyoto-bamboo'?'shrine gates':'bamboo grove') : state?.trip?.id==='paris' ? (cover==='paris-louvre'?'Eiffel Tower':'Louvre') : state?.trip?.id==='new-york' ? (cover==='new-york-park'?'Brooklyn Bridge':'Central Park') : 'sunset';
+  const coverPrompt=`Please use the ${subject} photograph as the cover. Keep the other photos, memories and supplied locations.`;
+  dialog('HUMAN WORDS. SHARED CREATIVITY.', `<h2>What would you like to change?</h2><p>Tell your team in your own words. They’ll revisit the source memories, share a draft, and check it before updating your preview.</p><textarea id="edit-prompt" aria-label="Your editing instruction" placeholder="For example, make day two more heartfelt without adding new events…"></textarea><div class="suggestions"><button data-cover-prompt data-prompt="${esc(coverPrompt)}">A different cover</button><button data-prompt="Make day two more heartfelt, using only the original memories.">A more heartfelt day two</button><button data-prompt="Include everyone’s original words without inventing quotes.">Include everyone’s words</button></div><button class="primary" id="copy-edit">Copy instruction for Mattermost ↗</button><p>The instruction is copied for you to send in Mattermost. Your conversation and the agents’ work stay visible to the whole team.</p><a class="text-button" href="${esc(state?.mattermost_url || 'http://localhost:8065')}" target="_blank" rel="noopener">Open Mattermost ↗</a>`);
   $('#copy-edit').onclick = () => {
     const prompt = $('#edit-prompt').value.trim();
     if (!prompt) return $('#edit-prompt').focus();
@@ -50,7 +55,7 @@ function credits() {
 }
 async function digest(revision) {
   // Server provides the canonical digest through an authenticated-free read endpoint.
-  const r = await fetch('/api/revisions/' + revision.version + '/publication');
+  const r = await fetch(tripAPI('/api/revisions/' + revision.version + '/publication'));
   if (!r.ok) throw new Error('Unable to load publication manifest');
   return r.json();
 }
@@ -59,15 +64,15 @@ async function publish() {
   if (!revision) return gettingStarted();
   try {
     const manifest = await digest(revision);
-    dialog('YOUR PERMISSION. YOUR STORY.', `<h2>Ready to let this story travel?</h2><p>Review every chapter, quotation, and photograph in <strong>version ${revision.version}</strong>. Sending the command below from the configured traveler account consents to making this exact book’s text and selected photographs public on GitHub and Cloudflare Pages.</p><p><strong>${state.publishing_enabled ? 'Cloud publishing is enabled. This command can publish a public website.' : 'Local judging mode: cloud publishing is disabled. Approval creates a local export only.'}</strong></p><h3>Selected photographs</h3><p>${manifest.asset_ids.map(id => esc(asset(id)?.label || id)).join('<br>')}</p><code id="publish-command">${esc(manifest.command)}</code><button id="copy-publish" class="primary">Copy exact-version approval command</button><p>Review this command, then send it yourself in Mattermost. Future edits need a fresh approval. Raw conversation logs and unused photographs are excluded.</p>`);
+    dialog('YOUR PERMISSION. YOUR STORY.', `<h2>Ready to let this story travel?</h2><p>Review every chapter, quotation, and photograph in <strong>version ${revision.version}</strong>. Sending the command below from the configured traveler account consents to making this exact book’s text and selected photographs public on GitHub and Cloudflare Pages.</p><p><strong>${state.publishing_enabled ? 'Cloud publishing is enabled. This command can publish a public website.' : 'Local judging mode: cloud publishing is disabled. Approval creates a local export only.'}</strong></p><h3>Selected photographs</h3><p>${manifest.asset_ids.map(id => esc(asset(id)?.label || id)).join('<br>')}</p><code id="publish-command">${esc(manifest.command)}</code><button id="copy-publish" class="primary">Copy exact-version approval command</button><p>Review this command, then send it yourself in Mattermost. Future edits need a fresh approval. The location names and coordinates shown in this edition will also be included if you approve. Raw conversation logs and unused photographs are excluded.</p>`);
     $('#copy-publish').onclick = () => copy(manifest.command);
   } catch { toast('Could not load the approval manifest. Please try again.'); }
 }
 async function history() {
   try {
-    const versions = await (await fetch('/api/revisions')).json();
+    const versions = await (await fetch(tripAPI('/api/revisions'))).json();
     dialog('EVERY CHAPTER OF THE PROCESS', `<h2>Your story, over time.</h2><p>Each edit keeps the earlier version. Viewing an old version does not change the latest draft or its publication approval.</p>${versions.length ? versions.map(v => `<div class="version-row"><span>Version ${v.id} · ${new Date(v.created * 1000).toLocaleString()}</span><button data-version="${v.id}">Read</button></div>`).join('') : '<p>Your first version is waiting to be woven.</p>'}<button id="latest-version" class="primary">Return to the latest version</button>`);
-    panel.querySelectorAll('[data-version]').forEach(b => b.onclick = async () => { pinned = await (await fetch('/api/revisions/' + b.dataset.version)).json(); panel.close(); renderStory(); });
+    panel.querySelectorAll('[data-version]').forEach(b => b.onclick = async () => { pinned = await (await fetch(tripAPI('/api/revisions/' + b.dataset.version))).json(); panel.close(); renderStory(); });
     $('#latest-version').onclick = () => { pinned = null; panel.close(); renderStory(); };
   } catch { toast('Version history is temporarily unavailable.'); }
 }
@@ -75,7 +80,7 @@ function renderStory() {
   const r = selected();
   const el = $('#view-story');
   if (!r) {
-    el.innerHTML = `<div class="empty-cover"><img src="/static/assets/coast.jpg" alt="Okinawa coastline, a licensed illustrative photograph"><div class="empty-message"><div class="eyebrow">YOUR NEXT CHAPTER STARTS HERE</div><h2>A little scattered.<br>A little unforgettable.</h2><p>Photos in one place. Words in another.<br>Let’s turn the moments you kept<br>into a story you’ll come back to.</p><button class="primary" id="start-button">✧ &nbsp; Weave your first story &nbsp; ↗</button><small>PRIVATE BY DEFAULT · MADE TOGETHER THROUGH SWITCH</small></div></div>`;
+    el.innerHTML = `<div class="empty-cover"><img src="/static/assets/kyoto-gates.jpg" alt="Kyoto shrine gates, a licensed illustrative photograph"><div class="empty-message"><div class="eyebrow">YOUR NEXT CHAPTER STARTS HERE</div><h2>A little scattered.<br>A little unforgettable.</h2><p>Photos in one place. Words in another.<br>Let’s turn the moments you kept<br>into a story you’ll come back to.</p><button class="primary" id="start-button">✧ &nbsp; Weave your first story &nbsp; ↗</button><small>PRIVATE BY DEFAULT · MADE TOGETHER THROUGH SWITCH</small></div></div>`;
     $('#start-button').onclick = gettingStarted;
     return;
   }
@@ -83,10 +88,11 @@ function renderStory() {
   const a = r.album;
   if (bookView === 'photos') {
     const ids = [...new Set([a.cover_asset_id, ...a.chapters.flatMap(c => c.asset_ids)])];
-    el.innerHTML = `<div class="photo-grid">${ids.map(id => `<figure><img src="${photoURL(id)}" alt="${esc(asset(id)?.label || 'Travel photograph')}" loading="lazy"><figcaption>${esc(asset(id)?.label)}<br><span class="photo-credit">${esc(asset(id)?.credit)}</span></figcaption></figure>`).join('')}</div>`;
+    el.innerHTML = `<div class="photo-grid">${ids.map(id => `<figure><img src="${photoURL(id)}" alt="${esc(asset(id)?.label || 'Travel photograph')}" loading="lazy"><figcaption>${esc(asset(id)?.label)}${photoLocation(id,r)}<br><span class="photo-credit">${esc(asset(id)?.credit)}</span></figcaption></figure>`).join('')}</div>`;
     return;
   }
-  el.innerHTML = `<article class="book" aria-label="Your travel story"><section class="cover"><img src="${photoURL(a.cover_asset_id)}" alt="${esc(asset(a.cover_asset_id)?.label || 'Travel journal cover')}"><div class="cover-top"><span>A MEMORYWEAVER TRAVEL JOURNAL</span><span class="cover-seal">✳</span></div><div class="cover-content"><div class="cover-location">${esc(a.location)}</div><h2 class="cover-title">${esc(a.title)}</h2><div class="cover-subtitle">${esc(a.subtitle)}</div><div class="cover-bottom"><strong>${esc(a.date_label)}</strong><span>A journey, woven together.</span></div></div></section><div class="book-caption"><span>VOL. 01 &nbsp; / &nbsp; ${a.chapters.length} CHAPTERS &nbsp; / &nbsp; ${r.mode.toUpperCase()} EDITION</span><span class="caption-note">Little moments. Lasting memories.</span></div><section class="intro"><div class="ornament">❧</div><div class="eyebrow">THE PLACES WE WENT. THE WORDS WE KEPT.</div><h2>旅を、もう一度。</h2><p>写真だけでは伝えきれない、あの日の言葉。<br>ひとつずつ拾い集めて、私たちだけの物語に。</p><div class="journey-index">${a.chapters.map(c => `<a href="#day-${c.day}"><span>${String(c.day).padStart(2,'0')}</span> ${chapterLabel(c, r)}</a>`).join('')}</div></section>${a.chapters.map((c, i) => `<section class="chapter" id="day-${c.day}"><div class="chapter-heading"><span class="chapter-number">${String(c.day).padStart(2,'0')}</span><div><div class="chapter-date">${chapterLabel(c, r)} &nbsp; · &nbsp; ${esc(date(c.date))}</div><h2>${esc(c.title)}</h2></div></div><div class="chapter-layout">${c.asset_ids.length ? `<div class="chapter-images">${c.asset_ids.map(id => `<figure><img src="${photoURL(id)}" alt="${esc(asset(id)?.label || 'Travel photograph')}" loading="lazy"><figcaption>${esc(asset(id)?.credit || '')}</figcaption></figure>`).join('')}</div>` : ''}<div class="chapter-prose"><p>${esc(c.body)}</p>${c.quote ? `<blockquote>「${esc(c.quote)}」</blockquote>` : ''}<button class="evidence-button" data-evidence="${i}">↗ &nbsp; Woven from ${c.source_ids.length} original memories</button></div></div></section>`).join('')}<div class="book-end"><span class="weave">✳</span><p>思い出は、これからも。</p><small>TO BE CONTINUED, TOGETHER.</small><div class="sample-label">${r.mode === 'replay' ? 'EXTRACTIVE REPLAY · NO LIVE AI GENERATION' : 'CREATED WITH CLAUDE CODE & CODEX · HUMAN REVIEW ENCOURAGED'}</div></div></article><div class="under-book"><span><i class="little-dot"></i> Woven with ${new Set(r.sources.map(s => s.author)).size} contributors &amp; four creative teammates</span><span>✧ &nbsp; A little human. A little AI. Entirely yours.</span></div><div class="publication-notice"><span>${state.publication?.url ? 'This story has a published edition.' : 'Your story is private. Share it only when it feels right.'}</span><button class="text-button" id="publish-button">Review publication ↗</button></div>`;
+  el.innerHTML = `<article class="book" aria-label="Your travel story"><section class="cover"><img src="${photoURL(a.cover_asset_id)}" alt="${esc(asset(a.cover_asset_id)?.label || 'Travel journal cover')}"><div class="cover-top"><span>A MEMORYWEAVER TRAVEL JOURNAL</span><span class="cover-seal">✳</span></div><div class="cover-content"><div class="cover-location">${esc(a.location)}</div><h2 class="cover-title">${esc(a.title)}</h2><div class="cover-subtitle">${esc(a.subtitle)}</div><div class="cover-bottom"><strong>${esc(a.date_label)}</strong><span>A journey, woven together.</span></div></div></section><div class="book-caption"><span>VOL. 01 &nbsp; / &nbsp; ${a.chapters.length} CHAPTERS &nbsp; / &nbsp; ${r.mode.toUpperCase()} EDITION</span><span class="caption-note">Little moments. Lasting memories.</span></div><section class="intro"><div class="ornament">❧</div><div class="eyebrow">THE PLACES WE WENT. THE WORDS WE KEPT.</div><h2>Let the journey unfold.</h2><p>The places we found. The words we kept.<br>Small moments, woven into a story that stays with us.</p><div class="journey-index">${a.chapters.map(c => `<a href="#day-${c.day}"><span>${String(c.day).padStart(2,'0')}</span> ${chapterLabel(c, r)}</a>`).join('')}</div></section>${renderJourney(r)}${a.chapters.map((c, i) => `<section class="chapter" id="day-${c.day}"><div class="chapter-heading"><span class="chapter-number">${String(c.day).padStart(2,'0')}</span><div><div class="chapter-date">${chapterLabel(c, r)} &nbsp; · &nbsp; ${esc(date(c.date))}</div><h2>${esc(c.title)}</h2></div></div><div class="chapter-layout">${c.asset_ids.length ? `<div class="chapter-images">${c.asset_ids.map(id => `<figure><img src="${photoURL(id)}" alt="${esc(asset(id)?.label || 'Travel photograph')}" loading="lazy"><figcaption>${photoLocation(id,r)}${esc(asset(id)?.credit || '')}</figcaption></figure>`).join('')}</div>` : ''}<div class="chapter-prose"><p>${esc(c.body)}</p>${c.quote ? `<blockquote>「${esc(c.quote)}」</blockquote>` : ''}<button class="evidence-button" data-evidence="${i}">↗ &nbsp; Woven from ${c.source_ids.length} original memories</button></div></div></section>`).join('')}<div class="book-end"><span class="weave">✳</span><p>Some journeys stay with us.</p><small>TO BE CONTINUED, TOGETHER.</small><div class="sample-label">${r.mode === 'replay' ? 'EXTRACTIVE REPLAY · NO LIVE AI GENERATION' : 'CREATED WITH CLAUDE CODE & CODEX · HUMAN REVIEW ENCOURAGED'}</div></div></article><div class="under-book"><span><i class="little-dot"></i> Woven with ${new Set(r.sources.map(s => s.author)).size} contributors &amp; four creative teammates</span><span>✧ &nbsp; A little human. A little AI. Entirely yours.</span></div><div class="publication-notice"><span>${state.publication?.url ? 'This story has a published edition.' : 'Your story is private. Share it only when it feels right.'}</span><button class="text-button" id="publish-button">Review publication ↗</button></div>`;
+  bindJourney();
   el.querySelectorAll('[data-evidence]').forEach(b => b.onclick = () => evidence(Number(b.dataset.evidence)));
   $('#publish-button').onclick = publish;
 }
@@ -99,6 +105,7 @@ function renderRoom() {
 }
 function render(next) {
   state = next;
+  $('#trip-breadcrumb').textContent=next.trip?.label || 'Your travel journal';
   $('#mode').textContent = next.mode === 'live' ? 'LIVE AI' : 'REPLAY DEMO';
   $('#mode').classList.toggle('live', next.mode === 'live');
   $('#agent-list').innerHTML = next.agents.map(a => `<div class="agent-row"><span class="avatar ${a.role}">${symbols[a.role]}</span><span><strong>${names[a.role]}</strong><small>${a.status === 'console' ? esc(a.name) + ' · Console' : jobs[a.role]}</small></span><i class="presence ${a.status === 'connected' && Date.now()/1000 - a.at < 12 ? 'online' : ''}" title="${esc(a.status)}"></i></div>`).join('');
@@ -124,15 +131,22 @@ panel.addEventListener('click', e => { if (e.target === panel) { const r = panel
 $('#read-button').onclick = () => { document.body.classList.toggle('reading'); $('#read-button').textContent = document.body.classList.contains('reading') ? '← Back to studio' : 'Reading mode ↗'; };
 async function connect() {
   try {
-    const r = await fetch('/api/state'); if (!r.ok) throw new Error();
+    const catalog=await (await fetch('/api/trips')).json();
+    availableTrips=catalog.trips;
+    const params=new URLSearchParams(location.search);
+    currentTrip=params.get('trip') || (params.get('version') && catalog.legacy ? catalog.legacy : catalog.default);
+    $('#trip-select').innerHTML=availableTrips.length ? availableTrips.map(t=>`<option value="${esc(t.id)}">${esc(t.label)}${t.mode ? ' · '+t.mode.toUpperCase() : ''}</option>`).join('') : '<option>Your journal</option>';
+    if(currentTrip)$('#trip-select').value=currentTrip;
+    $('#trip-select').onchange=()=>{location.href='/?'+new URLSearchParams({trip:$('#trip-select').value});};
+    const r = await fetch(tripAPI('/api/state')); if (!r.ok) throw new Error();
     const version = new URLSearchParams(location.search).get('version');
     if (version && /^[1-9]\d*$/.test(version)) {
-      const snapshot = await fetch('/api/revisions/' + version);
+      const snapshot = await fetch(tripAPI('/api/revisions/' + version));
       if (snapshot.ok) pinned = await snapshot.json();
       else toast('This book version could not be found. Showing the latest version.');
     }
     render(await r.json());
-    stream = new EventSource('/api/events');
+    stream = new EventSource(tripAPI('/api/events'));
     stream.onmessage = e => render(JSON.parse(e.data));
     stream.onerror = () => { $('#connection-label').textContent = 'Reconnecting to your studio…'; };
   } catch { $('#view-story').innerHTML = '<div class="offline-banner">Your local studio is unavailable. Start it with <code>python3 scripts/dev.py up</code>, then reload this page.</div>'; }

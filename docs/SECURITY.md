@@ -40,3 +40,10 @@ The export uses an explicit file allowlist. It never recursively copies a reposi
 The local bootstrap receives administrative credentials to initialize Mattermost and Switch. The web and regular agent services receive only the settings needed for their roles. Bootstrap and sample seeding run as short-lived trusted tooling. Do not place arbitrary code in this repository or authenticate AI clients against an untrusted checkout.
 
 Backups, encrypted storage, automatic retention/deletion, production authentication, and strong cryptographic attestation of human consent are not implemented. Preserve volumes if you need the memories; `down` retains them. Never use `down --volumes` unless you intend to delete local data and provider sessions.
+
+
+## Location data and multiple trips
+
+Explicit `[Location: Name | latitude,longitude]` annotations and valid EXIF GPS are the only automatic location inputs. Raw EXIF is removed from the served JPEG. Name-only locations are not geocoded, no reverse geocoding or remote map tiles run, and OpenStreetMap receives a coordinate only when a viewer opens its map link. Stock fixtures use separate, labeled approximate fictional landmark pins rather than original photographer GPS. Unknown locations stay unknown.
+
+Locations are snapshotted with each edition and included in its public-book consent digest. The publication review explains that coordinates will be included in an approved export. Unused source locations are excluded. Each catalog trip uses a separate SQLite file/media directory; the old root database remains the legacy book after an upgrade. This is room/book separation within one local studio, not a multi-tenant authorization system. All endpoints remain loopback-only in the default Docker setup.

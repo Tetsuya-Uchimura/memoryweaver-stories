@@ -2,11 +2,24 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+
+class Place(Strict):
+    name: str = Field(min_length=1, max_length=160)
+    latitude: float | None = Field(default=None, ge=-90, le=90, allow_inf_nan=False)
+    longitude: float | None = Field(default=None, ge=-180, le=180, allow_inf_nan=False)
+    basis: Literal["stated", "gps", "sample"] = "stated"
+
+    @model_validator(mode="after")
+    def coordinate_pair(self):
+        if (self.latitude is None) != (self.longitude is None):
+            raise ValueError("Latitude and longitude must be supplied together")
+        return self
 
 
 class Source(Strict):
@@ -16,6 +29,7 @@ class Source(Strict):
     captured_at: str
     date_basis: Literal["captured", "posted"] = "captured"
     asset_ids: list[str] = Field(default_factory=list)
+    location: Place | None = None
 
 
 class Chapter(Strict):

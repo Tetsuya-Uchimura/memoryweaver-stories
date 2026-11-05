@@ -34,7 +34,7 @@ services:
       dockerfile: deploy/shared_resources/images/Dockerfile.setup
     image: memoryweaver-switch-setup:source
     environment:
-      MATTERMOST_PUBLIC_URL: http://localhost:8065
+      MATTERMOST_PUBLIC_URL: http://localhost:${MATTERMOST_HOST_PORT:-8065}
   web:
     build: .
     image: memoryweaver-web:local
@@ -44,7 +44,8 @@ services:
       WEB_INTERNAL_TOKEN: ${WEB_INTERNAL_TOKEN}
       AI_MODE: ${AI_MODE:-replay}
       PUBLISH_ENABLED: ${PUBLISH_ENABLED:-false}
-    ports: ["127.0.0.1:8787:8787"]
+      MATTERMOST_PUBLIC_URL: http://localhost:${MATTERMOST_HOST_PORT:-8065}
+    ports: ["127.0.0.1:${WEB_HOST_PORT:-8787}:8787"]
     volumes: ["memorydata:/data"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8787/api/health')"]

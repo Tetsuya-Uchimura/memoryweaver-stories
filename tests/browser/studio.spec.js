@@ -2,11 +2,12 @@ const {test,expect} = require('@playwright/test');
 
 test('book, evidence, memories, collaboration and privacy are usable', async ({page,request},testInfo) => {
   const state = await (await request.get('/api/state')).json();
+  const trip=state.trip?.id;
   const album = state.revision.album;
   const photographs = new Set([album.cover_asset_id, ...album.chapters.flatMap(c => c.asset_ids)]);
   const errors=[];
   page.on('pageerror', e => errors.push(e.message));
-  await page.goto('/');
+  await page.goto(trip ? '/?'+new URLSearchParams({trip}) : '/');
   await expect(page.locator('.cover-title')).toBeVisible();
   await expect(page.locator('#mode')).toHaveText(state.mode === 'live' ? 'LIVE AI' : 'REPLAY DEMO');
   await expect(page.locator('.chapter')).toHaveCount(album.chapters.length);
@@ -29,8 +30,8 @@ test('book, evidence, memories, collaboration and privacy are usable', async ({p
   await expect(page.locator('.activity')).not.toHaveCount(0);
   await page.locator('[data-view="story"]').click();
   await page.locator('#edit-button').click();
-  await page.locator('[data-prompt="表紙を夕日の写真に変更して"]').click();
-  await expect(page.locator('#edit-prompt')).toHaveValue('表紙を夕日の写真に変更して');
+  await page.locator('[data-cover-prompt]').click();
+  await expect(page.locator('#edit-prompt')).toHaveValue(/photograph as the cover/);
   await page.locator('#close-panel').click();
   await page.locator('#publish-button').click();
   await expect(page.locator('#publish-command')).toContainText('I CONSENT TO PUBLIC PHOTOS AND TEXT');
@@ -45,10 +46,13 @@ test('book, evidence, memories, collaboration and privacy are usable', async ({p
 });
 
 test('a completion link opens its saved version', async ({page,request}) => {
-  const versions = await (await request.get('/api/revisions')).json();
+  const current=await (await request.get('/api/state')).json();
+  const trip=current.trip?.id;
+  const suffix=trip ? '?'+new URLSearchParams({trip}) : '';
+  const versions = await (await request.get('/api/revisions'+suffix)).json();
   const version = versions[versions.length - 1].id;
-  const snapshot = await (await request.get('/api/revisions/' + version)).json();
-  await page.goto('/?version=' + version);
+  const snapshot = await (await request.get('/api/revisions/' + version + suffix)).json();
+  await page.goto('/?'+new URLSearchParams({version,...(trip?{trip}:{})}));
   await expect(page.locator('#version-label')).toContainText('Version ' + version + ' · earlier draft');
   await expect(page.locator('.cover-title')).toHaveText(snapshot.album.title);
   await expect(page.locator('.cover > img')).toHaveAttribute('src', new RegExp(snapshot.album.cover_asset_id + '\\.jpg$'));

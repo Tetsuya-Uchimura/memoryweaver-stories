@@ -1,7 +1,7 @@
 """Observe a native run, verify real artifacts, then request/verify a cover edit.
 
 Run in bootstrap with local generated environment. No public approval is sent.
-An existing book and a source photograph with id sunset are required for --edit.
+At least two source photographs are required for --edit.
 """
 import argparse
 import asyncio
@@ -16,13 +16,16 @@ from agents.artifacts import artifact_paths
 
 async def main():
     p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--trip",default=None)
     p.add_argument("--after",type=int,required=True,help="Observe a version newer than this saved version")
-    p.add_argument("--edit",action="store_true",help="Also send a real Mattermost sunset-cover revision request")
+    p.add_argument("--edit",action="store_true",help="Also send a real Mattermost cover-change request")
     p.add_argument("--expect-cover",help="Assert the observed version uses this cover ID")
     p.add_argument("--timeout",type=int,default=600)
     args=p.parse_args()
-    store=Store()
-    if not store.get("console") or os.getenv("PUBLISH_ENABLED")=="true":
+    root=Store()
+    from app.trips import trip_store
+    store=trip_store(root,args.trip) if root.get("trips") else root
+    if not root.get("console") or os.getenv("PUBLISH_ENABLED")=="true":
         raise SystemExit("Requires Console binding and cloud publishing disabled")
     state=store.get("switch")
     before_publication=store.get("publication")
@@ -42,6 +45,9 @@ async def main():
                 await asyncio.sleep(2)
             else:raise RuntimeError("Timed out waiting for native preview and artifact delivery; inspect Console and Mattermost")
             assert revision["mode"]=="live"
+            if store.get('trip',{}).get('language')=='en':
+                assert revision['language']=='en'
+                if any(source.get('location') for source in revision['sources']):assert revision.get('photo_locations')
             selected={revision["album"]["cover_asset_id"],*[a for c in revision["album"]["chapters"] for a in c["asset_ids"]]}
             assert expected_photos.issubset(selected),"A previously selected photograph was lost"
             if cover: assert revision["album"]["cover_asset_id"]==cover
@@ -54,7 +60,7 @@ async def main():
             posts=[post for post in r.json()["posts"].values() if marker in post["message"] and len(post.get("file_ids",[]))==2]
             assert len(posts)==1,"Expected one Publisher completion post with both attachments"
             post=posts[0]
-            assert f"?version={revision['version']}" in post["message"] and revision["album"]["title"] in post["message"]
+            assert f"version={revision['version']}" in post["message"] and revision["album"]["title"] in post["message"]
             user=await mm.get('/api/v4/users/'+post['user_id']);user.raise_for_status()
             assert user.json()["is_bot"] and "publisher" in user.json()["username"]
             pdf,cover_file,_=artifact_paths(store,revision["version"])
@@ -65,7 +71,7 @@ async def main():
                 name=info.json()["name"]
                 assert name in expected and hashlib.sha256(data.content).digest()==hashlib.sha256(expected[name]).digest()
             async with httpx.AsyncClient() as web:
-                served=await web.get(os.environ["WEB_URL"]+f"/api/revisions/{revision['version']}/pdf");served.raise_for_status()
+                served=await web.get(os.environ["WEB_URL"]+f"/api/revisions/{revision['version']}/pdf"+('?'+'trip='+store.get('trip')['id'] if store.get('trip') else ''));served.raise_for_status()
                 assert served.content==pdf.read_bytes()
             assert store.get("publication")==before_publication
             print(f"PASS native v{revision['version']}: authenticated Claude draft → Codex review → Publisher; {len(revision['sources'])} sources / {len(selected)} photos; Mattermost title, version URL, cover/PDF byte matches; no publication",flush=True)
@@ -73,10 +79,10 @@ async def main():
         try:
             version=await verify_after(args.after,args.expect_cover)
             if args.edit:
-                if not any(a["id"]=="sunset" for a in store.all("assets")):raise ValueError("--edit requires the licensed sample sunset photo")
-                target="coast" if store.revision(version)["album"]["cover_asset_id"]=="sunset" else "sunset"
-                label="海の写真（coast）" if target=="coast" else "夕日の写真（sunset）"
-                r=await mm.post('/api/v4/posts',json={"channel_id":state["channel_id"],"message":f"@mw-collector Console連携の修正テストです。表紙を{label}に変更してください。他の写真・思い出・章はすべて残してください。公開はしないでください。"});r.raise_for_status()
+                candidates=[a["id"] for a in store.all("assets") if a["id"] in {aid for source in store.revision(version)["sources"] for aid in source["asset_ids"]}]
+                target=next((aid for aid in candidates if aid!=store.revision(version)["album"]["cover_asset_id"]),None)
+                if not target:raise ValueError("--edit requires two source photos")
+                r=await mm.post('/api/v4/posts',json={"channel_id":state["channel_id"],"message":f"@mw-collector Please change the cover to photograph ID {target}. Keep all other memories, photographs, chapters and supplied locations. This is a cover-edit test. Do not publish."});r.raise_for_status()
                 await verify_after(version,target)
         finally:
             await mm.post('/api/v4/users/logout')

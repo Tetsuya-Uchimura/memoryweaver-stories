@@ -57,7 +57,10 @@ class Store:
     def revision(self, version=None):
         with self.connect() as db:
             row = db.execute("SELECT * FROM revisions WHERE id=?", (version,)).fetchone() if version else db.execute("SELECT * FROM revisions ORDER BY id DESC LIMIT 1").fetchone()
-            return {"version": row["id"], "created": row["created"], **json.loads(row["data"])} if row else None
+            if not row:return None
+            value={"version": row["id"], "created": row["created"], **json.loads(row["data"])}
+            if self.get("trip"):value["trip_id"]=self.get("trip")["id"]
+            return value
 
     def commit(self, album, job_id, mode, sources):
         with self.connect() as db:
@@ -73,7 +76,10 @@ class Store:
                 item = known[asset_id]
                 path = Path(__file__).parent / "static/assets" / (asset_id + ".jpg") if item.get("sample") else self.root / "media" / (asset_id + ".jpg")
                 hashes[asset_id] = hashlib.sha256(path.read_bytes()).hexdigest()
-            data = dict(album=album, mode=mode, sources=sources, asset_hashes=hashes)
+            from app.locations import snapshot_locations
+            cited={sid for chapter in album["chapters"] for sid in chapter["source_ids"]}
+            places,photo_locations=snapshot_locations([s for s in sources if s["id"] in cited],known,asset_ids)
+            data = dict(album=album, mode=mode, sources=sources, asset_hashes=hashes, places=places, photo_locations=photo_locations, language=self.get("trip",{}).get("language","ja"))
             cur = db.execute("INSERT INTO revisions(data,job_id,created) VALUES (?,?,?)", (json.dumps(data, ensure_ascii=False), job_id, time.time()))
             db.execute("UPDATE jobs SET state='complete' WHERE id=?", (job_id,))
             # The preview and its delivery intent are committed atomically.
