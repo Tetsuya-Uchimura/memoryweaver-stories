@@ -2,7 +2,7 @@
 
 **Turn Scattered Memories into Beautiful Stories.**
 
-A photograph of the sea. A message about the biggest whale shark you have ever seen. A quiet “let’s come back.” MemoryWeaver brings those fragments together into a travel book, with people and AI teammates sharing one creative room through **Switch**.
+A photograph beneath vermilion gates. A message from a walk along the Seine. A quiet “let’s come back.” MemoryWeaver brings those fragments together into a travel book, with people and AI teammates sharing one creative room through **Switch**.
 
 Built for [Flip the Switch](https://www.wemakedevs.org/hackathons/switch), Track 2: Best Personal or Creative Workflow.
 
@@ -245,6 +245,8 @@ In live mode, Storyteller calls **Claude Code** with a structured album schema; 
 The container-CLI option uses custom Switch workers. Switch Console is optional for that path and required for the GUI-first path above. Neither option bypasses provider authentication.
 
 ## A different design for each journey
+
+![Kyoto quiet journal, Paris editorial magazine and New York urban book designs](docs/screenshots/designs.jpg)
 
 Each starter book includes **six distinct licensed photographs**, supplied by real sample Mattermost posts, with captions and approximate fictional locations. Six is the fixture size, **not an application photo limit**. Additional user uploads follow the same Collector → Switch documents → Storyteller → Editor → Publisher path.
 
