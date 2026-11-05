@@ -20,7 +20,7 @@ class Source(Strict):
 
 class Chapter(Strict):
     day: int = Field(ge=1, le=365)
-    date: str
+    date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
     title: str = Field(min_length=1, max_length=120)
     body: str = Field(min_length=1, max_length=5000)
     quote: str

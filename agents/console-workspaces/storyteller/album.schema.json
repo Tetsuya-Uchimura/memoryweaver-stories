@@ -1,0 +1,112 @@
+{
+  "$defs": {
+    "Chapter": {
+      "additionalProperties": false,
+      "properties": {
+        "day": {
+          "maximum": 365,
+          "minimum": 1,
+          "title": "Day",
+          "type": "integer"
+        },
+        "date": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "title": "Date",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "body": {
+          "maxLength": 5000,
+          "minLength": 1,
+          "title": "Body",
+          "type": "string"
+        },
+        "quote": {
+          "title": "Quote",
+          "type": "string"
+        },
+        "quote_source_id": {
+          "title": "Quote Source Id",
+          "type": "string"
+        },
+        "source_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Source Ids",
+          "type": "array"
+        },
+        "asset_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Asset Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "day",
+        "date",
+        "title",
+        "body",
+        "quote",
+        "quote_source_id",
+        "source_ids",
+        "asset_ids"
+      ],
+      "title": "Chapter",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "title": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "subtitle": {
+      "maxLength": 600,
+      "title": "Subtitle",
+      "type": "string"
+    },
+    "location": {
+      "title": "Location",
+      "type": "string"
+    },
+    "date_label": {
+      "title": "Date Label",
+      "type": "string"
+    },
+    "cover_asset_id": {
+      "title": "Cover Asset Id",
+      "type": "string"
+    },
+    "chapters": {
+      "items": {
+        "$ref": "#/$defs/Chapter"
+      },
+      "maxItems": 50,
+      "minItems": 1,
+      "title": "Chapters",
+      "type": "array"
+    }
+  },
+  "required": [
+    "title",
+    "subtitle",
+    "location",
+    "date_label",
+    "cover_asset_id",
+    "chapters"
+  ],
+  "title": "Album",
+  "type": "object"
+}

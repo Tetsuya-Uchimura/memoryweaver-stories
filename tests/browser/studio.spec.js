@@ -8,7 +8,7 @@ test('book, evidence, memories, collaboration and privacy are usable', async ({p
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('/');
   await expect(page.locator('.cover-title')).toBeVisible();
-  await expect(page.locator('#mode')).toHaveText('REPLAY DEMO');
+  await expect(page.locator('#mode')).toHaveText(state.mode === 'live' ? 'LIVE AI' : 'REPLAY DEMO');
   await expect(page.locator('.chapter')).toHaveCount(album.chapters.length);
   for (const c of album.chapters) {
     if (c.source_ids.every(id => state.revision.sources.find(s => s.id === id)?.date_basis === 'posted')) {
@@ -25,7 +25,7 @@ test('book, evidence, memories, collaboration and privacy are usable', async ({p
   await page.locator('[data-view="memories"]').click();
   await expect(page.locator('.memory-card')).toHaveCount(state.sources.length);
   await page.locator('[data-view="room"]').click();
-  await expect(page.locator('.room-intro')).toContainText('Real Switch communication');
+  await expect(page.locator('.room-intro')).toContainText(state.mode === 'live' ? 'Storyteller uses Claude Code' : 'Real Switch communication');
   await expect(page.locator('.activity')).not.toHaveCount(0);
   await page.locator('[data-view="story"]').click();
   await page.locator('#edit-button').click();

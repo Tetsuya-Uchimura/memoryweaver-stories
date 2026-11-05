@@ -57,11 +57,31 @@ def state():
         "assets": store.all("assets"),
         "events": store.events(),
         "agents": [{"role": r, **store.get("health:" + r, {"status": "waiting", "at": 0})} for r in ["collector", "storyteller", "editor", "publisher"]],
-        "mode": os.getenv("AI_MODE", "replay"),
+        "mode": "live" if store.get("console") else os.getenv("AI_MODE", "replay"),
+        "runtime": "console" if store.get("console") else "docker",
         "mattermost_url": "http://localhost:8065/memoryweaver/channels/okinawa-memories",
         "publishing_enabled": os.getenv("PUBLISH_ENABLED") == "true",
         "publication": store.get("publication"),
     }
+
+
+@app.post("/internal/console")
+async def configure_console(request: Request):
+    from agents.console import Binding
+    from pydantic import ValidationError
+    try:
+        binding = Binding.model_validate(await request.json())
+    except (ValidationError, ValueError) as exc:
+        raise HTTPException(422, "Expected Storyteller and Editor IDs and names") from exc
+    if binding.storyteller.id == binding.editor.id or binding.storyteller.name == binding.editor.name:
+        raise HTTPException(422, "Storyteller and Editor must be separate agents")
+    with store.connect() as db:
+        db.execute("BEGIN IMMEDIATE")
+        if db.execute("SELECT 1 FROM jobs WHERE state='working'").fetchone():
+            raise HTTPException(409, "Wait for the current job before changing the runtime")
+        db.execute("UPDATE jobs SET state='superseded' WHERE state='clarification'")
+        db.execute("INSERT OR REPLACE INTO kv VALUES ('console',?)", (json.dumps(binding.model_dump()),))
+    return {"runtime": "console", "agents": binding.model_dump()}
 
 
 @app.get("/api/revisions")

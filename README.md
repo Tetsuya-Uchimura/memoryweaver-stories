@@ -30,7 +30,11 @@ The `up` command fetches the audited official Switch source, builds it, starts P
 
 After the first build, `python3 scripts/dev.py up` reuses the same accounts, room, data, and authentication volume. `seed` is idempotent. No developer account or credentials are bundled.
 
-## Use Claude Code and Codex
+## Use Switch Console with your authenticated providers
+
+For the GUI-first workflow, follow [Switch Console setup](docs/CONSOLE.md): connect Console to the Docker server, register your local Claude Storyteller and Codex Editor, prepare their role directories, and run `python3 scripts/console.py bind`. Collector → Console Claude → Console Codex → Publisher then produces the private web book and PDF through Switch. Console sign-in stays on your machine; no container authentication is required in this mode.
+
+## Use Claude Code and Codex inside Docker
 
 The two pinned CLIs are installed **inside the agent image**. Authenticate your own accounts:
 
@@ -50,7 +54,7 @@ python3 scripts/dev.py seed --message '@mw-collector 今回の沖縄旅行をア
 
 In live mode, Storyteller calls **Claude Code** with a structured album schema; Editor calls **Codex** with a separate structured editorial review. Collector and Publisher are deterministic tool agents. Optional `CLAUDE_MODEL` and `CODEX_MODEL` settings let you select models your accounts can access; otherwise the authenticated CLIs choose their defaults. Live results are never silently replaced by replay output.
 
-This is a custom Switch protocol integration, not a Switch Console sidecar. **Switch Console and its separate onboarding are not required** for this Docker deployment. The project does not bypass provider authentication.
+The container-CLI option uses custom Switch workers. Switch Console is optional for that path and required for the GUI-first path above. Neither option bypasses provider authentication.
 
 ## Make it personal
 
@@ -128,7 +132,7 @@ For the developer repository, `python3 scripts/setup_publishing.py` creates/adop
 | Four agents, addressing, private bridged room | Project bootstrap through audited Switch operations |
 | Safe sample contributors and photo posts | `seed` through Mattermost’s actual API |
 | Claude Code / Codex sign-in | Human authentication, required by the providers |
-| Switch Console sign-in | Not needed for this custom protocol implementation |
+| Switch Console sign-in | Required only for the optional GUI-first native-provider path |
 | GitHub and Cloudflare | Optional, developer-provided configuration; never required for local judging |
 | Production publication | Explicit human consent to each exact version |
 

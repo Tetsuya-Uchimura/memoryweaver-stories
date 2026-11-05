@@ -101,9 +101,9 @@ function render(next) {
   state = next;
   $('#mode').textContent = next.mode === 'live' ? 'LIVE AI' : 'REPLAY DEMO';
   $('#mode').classList.toggle('live', next.mode === 'live');
-  $('#agent-list').innerHTML = next.agents.map(a => `<div class="agent-row"><span class="avatar ${a.role}">${symbols[a.role]}</span><span><strong>${names[a.role]}</strong><small>${jobs[a.role]}</small></span><i class="presence ${a.status === 'connected' && Date.now()/1000 - a.at < 12 ? 'online' : ''}" title="${esc(a.status)}"></i></div>`).join('');
+  $('#agent-list').innerHTML = next.agents.map(a => `<div class="agent-row"><span class="avatar ${a.role}">${symbols[a.role]}</span><span><strong>${names[a.role]}</strong><small>${a.status === 'console' ? esc(a.name) + ' · Console' : jobs[a.role]}</small></span><i class="presence ${a.status === 'connected' && Date.now()/1000 - a.at < 12 ? 'online' : ''}" title="${esc(a.status)}"></i></div>`).join('');
   const online = next.agents.filter(a => a.status === 'connected' && Date.now()/1000 - a.at < 12).length;
-  $('#connection-label').textContent = `${online}/4 teammates connected · ${next.mode === 'live' ? 'live AI' : 'replay demo'}`;
+  $('#connection-label').textContent = next.runtime === 'console' ? `${online}/2 tool agents connected · 2 Console-managed agents` : `${online}/4 teammates connected · ${next.mode === 'live' ? 'live AI' : 'replay demo'}`;
   const key = JSON.stringify([next.revision, next.assets, next.publication]);
   if (key !== lastRender) { renderStory(); lastRender = key; }
   renderMemories(); renderRoom();

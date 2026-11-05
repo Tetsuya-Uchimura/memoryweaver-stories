@@ -91,21 +91,29 @@ class Worker:
         job = self.store.job(entry.get("body", ""), job_id or event_id)
         if not job:
             return
-        await self.report("I’m gathering the photographs and everyone’s words. Capture dates will guide the chapters; missing details stay unknown. · " + self.mode.upper(), thread)
+        await self.report("I’m gathering the photographs and everyone’s words. Capture dates will guide the chapters; missing details stay unknown. · " + ("LIVE · Switch Console" if self.store.get("console") else self.mode.upper()), thread)
         entries = await self.client.history()
         await self.collect(entries)
         sources = sorted(self.store.all("sources"), key=lambda s: s["captured_at"])
         if not sources:
             raise ValueError("Post memories and photographs before requesting an album")
-        payload = dict(job=job, sources=sources, assets=self.store.all("assets"), previous=self.store.revision(), mode=self.mode)
+        console = self.store.get("console")
+        payload = dict(job=job, sources=sources, assets=self.store.all("assets"), previous=self.store.revision(), mode="live" if console else self.mode)
         document_id = await self.client.document("evidence-" + hashlib.sha256(job["id"].encode()).hexdigest()[:12], payload)
         await self.report(f"Collected {len(sources)} source posts from {len(set(s['author'] for s in sources))} contributors. Evidence is shared in the Switch room document.", thread)
-        await self.client.handoff("storyteller", document_id, job, thread)
+        if console:
+            from agents.console import start
+            await start(self, document_id, payload, thread)
+        else:
+            await self.client.handoff("storyteller", document_id, job, thread)
 
     async def handle(self, entry):
         event_id = entry["id"]
         if self.store.handled(self.role, event_id) or entry.get("kind") != "message":
             return
+        if self.role in {"storyteller", "editor"} and self.store.get("console"):
+            self.store.finish_event(self.role, event_id)
+            return  # Console owns these roles; never invoke Docker provider CLIs.
         body = entry.get("body", "")
         thread = entry.get("thread_id") or event_id
         human = entry.get("sender_kind") == "user"
@@ -128,6 +136,12 @@ class Worker:
                 raise ValueError("先に旅行記を作成してください。指定された版が見つかりません。")
             self.store.queue_delivery(current["version"])
             await self.report(f"旅行記 v{current['version']} の添付を確認し、未送信なら再送します。", thread)
+        elif self.role == "publisher" and not human and self.store.get("console"):
+            from agents.console import receive
+            if await receive(self, entry):
+                self.store.finish_event(self.role, event_id)
+                return
+            # Old Docker handoffs cannot commit a book in Console mode.
         elif self.role != "collector" and not human:
             match = re.search(r"MW_HANDOFF (\{.*\})", body, re.S)
             expected = "mw-" + ROLES[ROLES.index(self.role) - 1]
@@ -209,6 +223,12 @@ class Worker:
                         job_id = json.loads(handoff[1])["job"]["id"]
                     except (ValueError, KeyError, TypeError):
                         pass
+                native = re.search(r"MW_(?:DRAFT|REVIEW) (\{[^\n]*\})", entry.get("body", ""))
+                if native:
+                    try:
+                        job_id = json.loads(native[1])["job_id"]
+                    except (ValueError, KeyError, TypeError):
+                        pass
             with self.store.connect() as db:
                 db.execute("UPDATE jobs SET state='failed' WHERE id=? AND state='working'", (job_id,))
             safe = str(exc) if isinstance(exc, ValueError) else f"{self.role} could not complete this step ({type(exc).__name__}). Check local service logs/authentication and resend the request."
@@ -216,7 +236,12 @@ class Worker:
 
     async def health(self):
         while True:
-            self.store.set("health:" + self.role, {"status": "connected" if self.client.connected.is_set() else "reconnecting", "at": time.time(), "mode": self.mode})
+            binding = self.store.get("console")
+            if binding and self.role in {"storyteller", "editor"}:
+                # Registered/room presence does not prove a provider session is live.
+                self.store.set("health:" + self.role, {"status": "console", "at": time.time(), "mode": "live", "name": binding[self.role]["name"]})
+            else:
+                self.store.set("health:" + self.role, {"status": "connected" if self.client.connected.is_set() else "reconnecting", "at": time.time(), "mode": "live" if binding else self.mode})
             await asyncio.sleep(3)
 
     async def run(self):

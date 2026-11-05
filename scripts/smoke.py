@@ -14,7 +14,7 @@ from scripts.verify_release import verify
 
 
 async def main():
-    if os.getenv("AI_MODE", "replay") != "replay" or os.getenv("PUBLISH_ENABLED") == "true":
+    if Store().get("console") or os.getenv("AI_MODE", "replay") != "replay" or os.getenv("PUBLISH_ENABLED") == "true":
         raise SystemExit("Smoke test requires AI_MODE=replay and PUBLISH_ENABLED=false")
     store = Store()
     if not store.get("seed:complete"):

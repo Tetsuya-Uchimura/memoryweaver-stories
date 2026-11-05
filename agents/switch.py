@@ -170,3 +170,6 @@ def classify_history(entries, participants):
         identity = joined.get(entry["sender"])
         if identity and identity[0] == entry.get("sender_name"):
             entry.setdefault("sender_kind", identity[1])
+            matches = [p for p in participants if p["name"] == identity[0] and p["type"] == identity[1]]
+            if identity[1] == "agent" and len(matches) == 1:
+                entry["sender_agent_id"] = matches[0].get("id")

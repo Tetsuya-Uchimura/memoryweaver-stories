@@ -1,5 +1,21 @@
 # Verification record
 
+## Console-native verification — November 5, 2026
+
+**Passed with real authenticated providers:** Switch Console **0.40.1**, the pinned Docker Switch core **0.31.0**, and the user's independently registered `mw-storyteller-claude` / `mw-editor-codex` agents. No host provider credentials were copied to Docker. Docker's original model workers remained idle in Console mode.
+
+- Mattermost Collector requests produced native Claude drafts and native Codex reviews through real Switch documents and targeted handoffs. Publisher saved **LIVE v11, v12 and v13**. Each retained **7 source posts, 5 photographs and 4 chapters**, including an existing private user-uploaded photograph.
+- The v12 → v13 request changed the cover from `sunset` to `coast`. The chapter arrays were **exactly equal**, verifying that this cover edit preserved the text, citations and photos. The known travel range remained October 12–14; the extra posted-only photo remained an explicitly undated photo note.
+- For all three versions, the integration observer verified the actual Publisher bot identity, title, version URL and both Mattermost attachments. Downloaded PDF/cover bytes matched the saved artifacts; the application's PDF download matched too. Public approval/deployment state did not change.
+- Initial live trials exposed a textual value in the ISO date field and a technical question about photo-note rendering. The final schema now constrains ISO dates, the role protocol explains the tested renderer behavior, and an Editor can ask Publisher a structured rendering question through Switch. Unapproved reviews preserve the preview and can resume; newer requests supersede pending clarification jobs.
+- **50 Python tests passed**, including genuine native receipt flow, spoofed ID rejection, changed evidence/draft detection, citation/quote checks, wrong-job/draft rejection, corrected drafts, clarification/resumption/supersession, renderer replies, runtime configuration authentication and idled Docker inference. Existing PDF/delivery/publishing tests remain included. **4 desktop/mobile browser checks passed** against the saved live book.
+
+Reproduction is documented in [Console setup](CONSOLE.md). `scripts/console_smoke.py` observes a requested native generation and can issue a real cover edit, checking receipts and attachment hashes without consenting to publication. Provider model availability and authentication remain account-specific. Native inference was exercised on this Mac; a fresh Console registration on a second physical machine has **not** been tested. The earlier fresh-clone Docker replay verification below remains a separate infrastructure check. Container-CLI live inference and actual Cloudflare deployment remain unverified.
+
+The evidence contains personal input and is retained only in ignored local Docker/runtime storage. No private book, uploaded photo, account credential, generated PDF or new screenshot is included in this source change.
+
+## Earlier replay/infrastructure verification
+
 Verified on **November 5, 2026 (Asia/Tokyo)** on macOS / Apple Silicon, Docker Desktop Engine 29.1.3. Mattermost runs as the upstream-pinned amd64 image under emulation. Switch was built from official commit `6e4ade5269d65ee38060a9f43b77c5e5b3be2f10`.
 
 ## Completed
@@ -33,7 +49,7 @@ The standalone Playwright Chromium download stalled in this environment and was 
 
 ## Not yet verified
 
-- **Authenticated live Claude Code → Codex generation**, model image review, account-specific model access, and creative quality. The container sign-in checks reported `loggedIn: false` / `Not logged in`. Complete the two documented human authentication flows, set `AI_MODE=live`, regenerate the sample, and inspect every result before recording a live-AI demo.
+- **Container-CLI live generation** remains unverified; the authenticated Console-native path is now verified above. Exhaustive visual examination of every photo and creative quality are not guaranteed by schema/evidence checks. Inspect the generated book before recording a demo.
 - **Actual approved-book commit → GitHub Actions → Cloudflare Pages deployment and URL callback.** The private repository and source CI are configured; the Publisher's scoped GitHub token, Cloudflare account/project, and production secrets are not yet supplied. `scripts/setup_publishing.py` prepares the optional publishing services; its unit checks use substituted provider responses. No production deployment or public URL is claimed.
 - **A fresh clone on another physical machine.** A completely separate Docker project from a fresh GitHub clone passed on this Mac; independent Linux/Windows hardware and network conditions have not been tested.
 - **Real iOS Safari, Android browsers, and accessibility assistive devices.** Mobile layout was tested in a Chromium device viewport, not on physical phones.

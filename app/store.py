@@ -64,7 +64,7 @@ class Store:
             db.execute("BEGIN IMMEDIATE")
             job = db.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()
             last = db.execute("SELECT max(id) FROM revisions").fetchone()[0] or 0
-            if not job or job["state"] != "working" or job["base"] != last:
+            if not job or job["state"] not in {"working", "clarification"} or job["base"] != last:
                 raise ValueError("Stale or completed job: request a new edit against the latest preview")
             asset_ids = set([album["cover_asset_id"], *[a for c in album["chapters"] for a in c["asset_ids"]]])
             known = {json.loads(r[0])["id"]: json.loads(r[0]) for r in db.execute("SELECT data FROM assets")}
@@ -113,6 +113,7 @@ class Store:
             # Concurrent edits must not silently overwrite one another.
             if db.execute("SELECT 1 FROM jobs WHERE state='working'").fetchone():
                 raise ValueError("An edit is already in progress; wait for the preview, then resend your request")
+            db.execute("UPDATE jobs SET state='superseded' WHERE state='clarification'")
             base = db.execute("SELECT max(id) FROM revisions").fetchone()[0] or 0
             db.execute("INSERT INTO jobs VALUES (?,?,?,'working',?)", (event_id, request, base, time.time()))
             return {"id": event_id, "base": base, "request": request}
